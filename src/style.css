@@ -183,6 +183,13 @@ button:hover {
   transform: translateY(-1px);
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--public-cyan);
+  outline-offset: 2px;
+}
+
 button:disabled {
   opacity: 0.6;
   cursor: wait;
@@ -252,6 +259,12 @@ table {
   font-size: 14px;
 }
 
+caption {
+  text-align: left;
+  color: var(--text-muted);
+  padding: 0 0 8px;
+}
+
 th,
 td {
   border: 1px solid var(--border);
@@ -316,4 +329,17 @@ th {
   border-top: 1px solid var(--border);
   color: var(--text-muted);
   margin-top: 2rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  button:hover {
+    transform: none;
+  }
 }

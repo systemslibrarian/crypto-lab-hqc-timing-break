@@ -47,7 +47,7 @@ app.innerHTML = `
         <button id="generate-key">Generate Keypair</button>
       </div>
       <p id="toy-warning" class="warning hidden">TOY - NOT PRODUCTION SECURE</p>
-      <pre id="key-progress" class="console">No key generated yet.</pre>
+      <pre id="key-progress" class="console" role="status" aria-live="polite" aria-atomic="true">No key generated yet.</pre>
       <div class="grid two">
         <article>
           <h3>Public key</h3>
@@ -68,7 +68,7 @@ app.innerHTML = `
         <button id="encrypt-again-btn" class="ghost">Encrypt again</button>
       </div>
       <button id="decrypt-btn" class="ghost">Decrypt latest ciphertext</button>
-      <pre id="enc-output" class="console">Waiting for encryption demo.</pre>
+      <pre id="enc-output" class="console" role="status" aria-live="polite" aria-atomic="true">Waiting for encryption demo.</pre>
     </section>
 
     <section class="card" id="exhibit-2">
@@ -88,7 +88,7 @@ app.innerHTML = `
         <label>Scalar k<input id="scalar-k" type="number" value="7" min="0"/></label>
         <button id="run-scalar">Run c^k</button>
       </div>
-      <pre id="homo-output" class="console">Generate a keypair first.</pre>
+      <pre id="homo-output" class="console" role="status" aria-live="polite" aria-atomic="true">Generate a keypair first.</pre>
       <div class="cannot">
         <h3>What you cannot do</h3>
         <p>Paillier does not support ciphertext-by-ciphertext multiplication. For that, use FHE (BGV/BFV/CKKS) or MPC-based multiplication.</p>
@@ -104,7 +104,7 @@ app.innerHTML = `
         <button id="run-election">Simulate election tally</button>
         <label class="toggle"><input id="show-votes" type="checkbox"/> Show plaintext votes for demo verification</label>
       </div>
-      <pre id="vote-output" class="console">No election run yet.</pre>
+      <pre id="vote-output" class="console" role="status" aria-live="polite" aria-atomic="true">No election run yet.</pre>
     </section>
 
     <section class="card" id="exhibit-4">
@@ -113,15 +113,16 @@ app.innerHTML = `
         <input id="hospital-input" value="10,25,17,8,30" />
       </label>
       <button id="run-hospitals">Simulate private aggregation</button>
-      <pre id="hospital-output" class="console">No aggregation run yet.</pre>
+      <pre id="hospital-output" class="console" role="status" aria-live="polite" aria-atomic="true">No aggregation run yet.</pre>
     </section>
 
     <section class="card" id="exhibit-5">
       <h2>Exhibit 5: Paillier vs Other Homomorphic Schemes</h2>
       <div class="table-wrap">
         <table>
+          <caption>Comparison of Paillier and other homomorphic encryption schemes</caption>
           <thead>
-            <tr><th>Property</th><th>Paillier (1999)</th><th>ElGamal Exponential</th><th>BGV/BFV (FHE)</th><th>CKKS (FHE)</th></tr>
+            <tr><th scope="col">Property</th><th scope="col">Paillier (1999)</th><th scope="col">ElGamal Exponential</th><th scope="col">BGV/BFV (FHE)</th><th scope="col">CKKS (FHE)</th></tr>
           </thead>
           <tbody>
             <tr><td>Homomorphic operations</td><td>Addition + scalar mul</td><td>Addition</td><td>Add + multiply (limited depth)</td><td>Add + multiply (approximate)</td></tr>
