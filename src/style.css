@@ -57,6 +57,7 @@ body {
 }
 
 .topbar {
+  position: relative;
   display: flex;
   justify-content: space-between;
   gap: 24px;
@@ -66,6 +67,26 @@ body {
   border-radius: 22px;
   padding: 24px;
   box-shadow: var(--shadow);
+}
+
+.theme-toggle {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 0;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.theme-toggle:hover {
+  background: var(--surface);
 }
 
 .eyebrow {

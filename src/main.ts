@@ -31,7 +31,7 @@ app.innerHTML = `
         <h1>The Additive Homomorphic Cryptosystem</h1>
         <p class="subtitle">Sealed ballots can be counted without opening them. That is Paillier in one line: E(a) · E(b) = E(a+b).</p>
       </div>
-      <button id="theme-toggle" class="ghost">Toggle theme</button>
+      <button id="theme-toggle" class="theme-toggle" style="position: absolute; top: 0; right: 0"></button>
     </header>
 
     <section class="card" id="exhibit-1">
@@ -197,15 +197,26 @@ const updateKeyPanels = (): void => {
     : '██████████████████ [Show]'
 }
 
-const setTheme = (theme: 'dark' | 'light'): void => {
-  document.documentElement.setAttribute('data-theme', theme)
-  localStorage.setItem('theme', theme)
-}
+const initThemeToggle = (button: HTMLButtonElement): void => {
+  const apply = (theme: 'dark' | 'light') => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('theme', theme)
+    button.textContent = theme === 'dark' ? '🌙' : '☀️'
+    button.setAttribute(
+      'aria-label',
+      theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
+    )
+  }
 
-themeToggle.addEventListener('click', () => {
   const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'
-  setTheme(current === 'light' ? 'dark' : 'light')
-})
+  apply(current)
+
+  button.addEventListener('click', () => {
+    const next =
+      document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'
+    apply(next)
+  })
+}
 
 togglePrivateBtn.addEventListener('click', () => {
   showPrivate = !showPrivate
@@ -399,7 +410,5 @@ document.getElementById('run-hospitals')?.addEventListener('click', () => {
   }
 })
 
-if (!document.documentElement.getAttribute('data-theme')) {
-  setTheme('dark')
-}
+initThemeToggle(themeToggle)
 updateKeyPanels()
