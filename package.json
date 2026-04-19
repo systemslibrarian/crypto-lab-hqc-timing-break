@@ -1,12 +1,13 @@
 {
-  "name": "crypto-lab-hqc-timing-break",
+  "name": "crypto-lab-paillier-gate",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify": "tsx scripts/verify-phase7.ts"
   },
   "devDependencies": {
     "tsx": "^4.21.0",

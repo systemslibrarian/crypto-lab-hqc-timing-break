@@ -1,9 +1,10 @@
 import {
   gcd,
-  generatePrime,
+  isProbablePrime,
   lcm,
   modInverse,
   modPow,
+  randomBigInt,
   randomCoprime,
 } from './numbers'
 
@@ -38,6 +39,35 @@ function normalizeMod(value: bigint, modulus: bigint): bigint {
   return modded >= 0n ? modded : modded + modulus
 }
 
+function randomOddWithBitLength(bits: number): bigint {
+  const upper = 1n << BigInt(bits)
+  const topBit = 1n << BigInt(bits - 1)
+  let candidate = randomBigInt(upper)
+  candidate |= topBit
+  candidate |= 1n
+  return candidate
+}
+
+async function generatePrimeAsync(
+  bits: number,
+  onProgress?: (attempts: number) => void,
+): Promise<bigint> {
+  let attempts = 0
+  while (true) {
+    attempts += 1
+    onProgress?.(attempts)
+    const candidate = randomOddWithBitLength(bits)
+    if (isProbablePrime(candidate, 40)) {
+      return candidate
+    }
+    if (attempts % 20 === 0) {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 0)
+      })
+    }
+  }
+}
+
 /**
  * The L function: L(x) = (x - 1) / N.
  * Integer division. If (x-1) mod N != 0, throws.
@@ -68,7 +98,7 @@ export async function generateKeyPair(
 
   let pAttempts = 0
   onProgress?.(`Searching for prime p (${primeBits} bits)...`, 5)
-  const p = generatePrime(primeBits, (attempts) => {
+  const p = await generatePrimeAsync(primeBits, (attempts) => {
     pAttempts = attempts
     const progress = Math.min(35, 5 + Math.floor(Math.log2(attempts + 1) * 4))
     onProgress?.(`Searching for prime p (${primeBits} bits)... attempt ${attempts}`, progress)
@@ -80,7 +110,7 @@ export async function generateKeyPair(
   let q = p
   while (q === p) {
     onProgress?.(`Searching for prime q (${primeBits} bits)...`, 45)
-    q = generatePrime(primeBits, (attempts) => {
+    q = await generatePrimeAsync(primeBits, (attempts) => {
       qAttempts = attempts
       const progress = Math.min(75, 45 + Math.floor(Math.log2(attempts + 1) * 4))
       onProgress?.(`Searching for prime q (${primeBits} bits)... attempt ${attempts}`, progress)
