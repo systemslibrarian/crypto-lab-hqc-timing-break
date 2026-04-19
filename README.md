@@ -1,30 +1,33 @@
-# crypto-lab-paillier-gate
-
-Browser-based Paillier cryptosystem demo implementing Pascal Paillier's 1999 additive homomorphic public-key encryption scheme.
+# crypto-lab-hqc-timing-break
 
 ## What It Is
-Browser-based Paillier cryptosystem demo implementing Pascal Paillier's 1999 additive homomorphic public-key encryption scheme. Supports keypair generation at 12/1024/2048-bit levels, encryption/decryption, homomorphic addition of ciphertexts, addition of public plaintext to ciphertext, scalar multiplication of ciphertexts, and ciphertext re-randomization. All arithmetic uses BigInt with square-and-multiply modular exponentiation. Includes simulated private aggregation (5-hospital patient count) and private voting (10-voter election) scenarios that use only the homomorphic property; no individual values are ever decrypted.
+This demo is a browser implementation of the Paillier cryptosystem with additive homomorphism, implemented with BigInt arithmetic in TypeScript. It demonstrates public-key encryption and decryption, ciphertext addition, public plaintext addition, public scalar multiplication, and re-randomization without decrypting intermediate values. The core problem it solves is private summation: computing totals while keeping individual inputs hidden. Its security model is asymmetric cryptography based on the decisional composite residuosity assumption, with toy-size parameters included only for education.
 
 ## When to Use It
-- Understanding why Paillier is the workhorse of private aggregation systems: e-voting, healthcare analytics, federated counting.
-- Teaching the difference between additive and multiplicative homomorphism (see ElGamal demo for contrast).
-- Learning why threshold ECDSA protocols like GG20 use Paillier under the hood.
-- Distinguishing Paillier from fully homomorphic encryption: different tradeoffs, different deployment profiles.
-- Not for generic file encryption (use AES-GCM). Paillier ciphertexts are roughly 2x the modulus bit length, so use hybrid encryption for bulk data.
+- Private vote tallying where each vote is encrypted as 0/1 and only the final sum is decrypted, because Paillier supports ciphertext aggregation by multiplication.
+- Multi-party count aggregation across organizations, because each contributor can encrypt locally and share only ciphertexts.
+- Public weighted sum workflows in analytics, because ciphertexts can be raised to public weights and combined homomorphically.
+- Teaching additive-only homomorphism in applied cryptography courses, because the demo exposes both cryptographic operations and verification outputs.
+- Do not use this scheme for bulk file encryption, because Paillier ciphertexts are large and the primitive is designed for small numeric messages and aggregation.
 
 ## Live Demo
-https://systemslibrarian.github.io/crypto-lab-paillier-gate/
+https://systemslibrarian.github.io/crypto-lab-hqc-timing-break/
 
-## What Can Go Wrong
-- Paillier encryption is not chosen-ciphertext secure (IND-CCA). An adversary can manipulate ciphertexts homomorphically in ways the scheme does not authenticate. Production deployments with adversarial parties require zero-knowledge proofs of correct ciphertext structure.
-- Key generation for 2048-bit N takes several seconds in-browser due to Miller-Rabin primality testing.
-- Toy mode uses 12-bit N and is completely insecure. It exists for visualization only.
-- Security relies on decisional composite residuosity hardness and therefore falls with large-scale quantum factoring (Shor), similar to RSA.
+In the live page you can generate keypairs at multiple key sizes, then encrypt and decrypt values directly in the browser. You can also run homomorphic operations to verify that decrypted results match expected sums and scalar products. Controls include key size selection, message input, homomorphic operation inputs, voting inputs, and hospital aggregation inputs.
 
-## Real-World Usage
-Pascal Paillier introduced this cryptosystem at Eurocrypt 1999. It became a standard primitive for additive homomorphic encryption in deployed systems. Usage examples include the Helios voting system, ElectionGuard, threshold ECDSA wallets (GG20/GG18/Lindell variants), federated healthcare analytics, and private telemetry aggregation. The GG20 wallet demo in this suite uses Paillier internally for threshold signing.
+## How to Run Locally
+```bash
+git clone https://github.com/systemslibrarian/crypto-lab-hqc-timing-break
+cd crypto-lab-hqc-timing-break
+npm install
+npm run dev
+```
 
-## Development
-- Install dependencies: `npm ci`
-- Run locally: `npm run dev`
-- Build: `npm run build`
+No environment variables are required.
+
+## Part of the Crypto-Lab Suite
+One of 60+ live browser demos at [systemslibrarian.github.io/crypto-lab](https://systemslibrarian.github.io/crypto-lab/) — spanning Atbash (600 BCE) through NIST FIPS 203/204/205 (2024).
+
+---
+
+*"Whether you eat or drink, or whatever you do, do all to the glory of God." — 1 Corinthians 10:31*
