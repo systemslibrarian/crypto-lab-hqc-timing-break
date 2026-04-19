@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/crypto-lab-paillier-gate/',
+  base: '/crypto-lab-hqc-timing-break/',
 })
