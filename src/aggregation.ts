@@ -26,7 +26,7 @@ export function simulatePrivateAggregation(
 
   const encryptedTotal = hospitals.reduce(
     (acc, hospital) => addCiphertexts(acc, hospital.encryptedCount, publicKey),
-    1n,
+    encrypt(0n, publicKey).ciphertext,
   )
 
   return { hospitals, encryptedTotal }
@@ -56,7 +56,7 @@ export function simulatePrivateElection(
 
   const encryptedTally = encryptedVotes.reduce(
     (acc, vote) => addCiphertexts(acc, vote.encryptedVote, publicKey),
-    1n,
+    encrypt(0n, publicKey).ciphertext,
   )
 
   return { encryptedVotes, encryptedTally }
@@ -71,7 +71,7 @@ export function weightedSum(
     throw new Error('encryptedValues and weights must have the same length')
   }
 
-  let total = 1n
+  let total = encrypt(0n, publicKey).ciphertext
   for (let i = 0; i < encryptedValues.length; i += 1) {
     const weight = weights[i]
     if (weight < 0n) {

@@ -41,7 +41,10 @@ export function extendedGcd(a: bigint, b: bigint): {
     ;[oldT, t] = [t, oldT - q * t]
   }
 
-  return { gcd: oldR < 0n ? -oldR : oldR, x: oldS, y: oldT }
+  if (oldR < 0n) {
+    return { gcd: -oldR, x: -oldS, y: -oldT }
+  }
+  return { gcd: oldR, x: oldS, y: oldT }
 }
 
 /**
@@ -73,9 +76,8 @@ export function modPow(base: bigint, exp: bigint, m: bigint): bigint {
   let e = exp
 
   while (e > 0n) {
-    if ((e & 1n) === 1n) {
-      result = (result * b) % m
-    }
+    const nextResult = (result * b) % m
+    result = (e & 1n) === 1n ? nextResult : result
     b = (b * b) % m
     e >>= 1n
   }
