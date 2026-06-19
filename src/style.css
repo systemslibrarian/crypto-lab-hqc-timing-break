@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+/* Fonts are loaded via <link rel="preconnect"> + stylesheet in index.html so
+   they fetch earlier and avoid a late swap (a CSS @import is render-blocking
+   and reflows text after first paint). */
 
 :root {
   --public-cyan: #00d4ff;
@@ -27,10 +29,54 @@
   --text-muted: #41587f;
   --border: #bcd0f6;
   --shadow: 0 20px 40px rgba(25, 55, 111, 0.16);
+  /* The neon accents are unreadable as text on light backgrounds (cyan 1.6:1,
+     gold 1.4:1). Darken them for light mode only — all clear 4.5:1 now. */
+  --public-cyan: #0a7090;
+  --result-gold: #8a6400;
+  --plain-green: #117a43;
+  --private-red: #cc1f44;
 }
 
 * {
   box-sizing: border-box;
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -64px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: 0 0 12px 12px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.18s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: 2px solid var(--public-cyan);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+#main:focus {
+  outline: none;
 }
 
 html,
@@ -49,6 +95,13 @@ body {
   padding: 24px;
 }
 
+/* Reserve the first viewport so the client-rendered app filling #app does not
+   shove the static footer down from the top of the page (eliminates the large
+   cumulative layout shift on load). */
+#app {
+  min-height: 100vh;
+}
+
 .shell {
   max-width: 1200px;
   margin: 0 auto;
@@ -60,7 +113,7 @@ body {
   position: relative;
   display: flex;
   justify-content: space-between;
-  gap: 24px;
+  gap: 16px;
   align-items: flex-start;
   background: linear-gradient(120deg, rgba(0, 212, 255, 0.1), rgba(255, 0, 170, 0.12));
   border: 1px solid var(--border);
@@ -69,9 +122,15 @@ body {
   box-shadow: var(--shadow);
 }
 
+.topbar-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .theme-toggle {
-  width: 2.6rem;
-  height: 2.6rem;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 1px solid var(--border);
   background: var(--surface-2);
@@ -134,11 +193,13 @@ h3 {
 
 .console {
   font-family: 'IBM Plex Mono', monospace;
-  background: rgba(0, 0, 0, 0.25);
+  /* Terminal stays dark in both themes — keeps output legible (14.3:1) and
+     avoids grey-on-grey when the page is in light mode. */
+  background: #0a1020;
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px;
-  color: #ccd8f6;
+  color: #d3e0fb;
   line-height: 1.45;
   min-height: 92px;
   overflow-x: auto;
@@ -159,24 +220,45 @@ button {
   font: inherit;
 }
 
-input,
+input:not([type='checkbox']),
 select {
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.04);
   color: var(--text);
   border-radius: 10px;
   padding: 10px 12px;
+  /* 16px keeps iOS Safari from auto-zooming when a field gains focus */
+  font-size: 16px;
+  min-height: 44px;
+}
+
+input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--public-cyan);
+  cursor: pointer;
+}
+
+.toggle {
+  cursor: pointer;
+  /* comfortable tap target for the whole label row */
+  min-height: 44px;
 }
 
 button {
   border: 0;
   border-radius: 10px;
-  padding: 10px 14px;
-  background: linear-gradient(90deg, var(--cipher-magenta-a), var(--cipher-magenta-b));
+  padding: 10px 16px;
+  min-height: 44px;
+  /* Darkened from the bright cipher accents so white label text clears 4.5:1
+     across the whole gradient (the original #ff00aa end was only 3.6:1). */
+  background: linear-gradient(90deg, #d6008c, #9a00e0);
   color: white;
   font-weight: 600;
+  font-size: 16px;
   cursor: pointer;
   transition: transform 0.18s ease;
+  touch-action: manipulation;
 }
 
 button:hover {
@@ -286,6 +368,149 @@ th {
   color: var(--text-muted);
 }
 
+/* ---- Teaching components ---- */
+
+code,
+var {
+  font-family: 'IBM Plex Mono', monospace;
+  font-style: normal;
+}
+
+code {
+  background: rgba(0, 0, 0, 0.22);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 0.92em;
+  color: var(--public-cyan);
+}
+
+:root[data-theme='light'] code {
+  background: rgba(13, 26, 51, 0.06);
+}
+
+var {
+  color: var(--result-gold);
+  font-weight: 600;
+}
+
+.idea {
+  border: 1px solid color-mix(in srgb, var(--cipher-magenta-a), var(--border) 55%);
+}
+
+.lead {
+  margin: 0 0 6px;
+  max-width: 80ch;
+}
+
+.exhibit-intro {
+  margin: 0 0 14px;
+  color: var(--text-muted);
+  max-width: 82ch;
+}
+
+.math {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin: 14px 0;
+  overflow-x: auto;
+}
+
+:root[data-theme='light'] .math {
+  background: rgba(13, 26, 51, 0.04);
+}
+
+.math-line {
+  font-family: 'IBM Plex Mono', monospace;
+  line-height: 1.7;
+  white-space: nowrap;
+}
+
+.math-line.indent {
+  padding-left: 2.5ch;
+}
+
+.math .mod {
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+.math .annot {
+  display: block;
+  white-space: normal;
+  padding-left: 2.5ch;
+  margin-top: 2px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.82em;
+  color: var(--plain-green);
+}
+
+.corollaries,
+.op-legend {
+  margin: 12px 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 6px;
+}
+
+.corollaries li,
+.op-legend li {
+  color: var(--text-muted);
+}
+
+.why {
+  margin-top: 16px;
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+}
+
+.why summary {
+  cursor: pointer;
+  color: var(--public-cyan);
+  font-weight: 600;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.why summary:focus-visible {
+  outline: 2px solid var(--public-cyan);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.why p {
+  color: var(--text-muted);
+  max-width: 82ch;
+}
+
+.glossary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 24px;
+  margin: 0;
+}
+
+.glossary > div {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.glossary dt {
+  flex: 0 0 4.5ch;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--result-gold);
+  font-weight: 700;
+}
+
+.glossary dd {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
 #public-key-text {
   color: var(--public-cyan);
 }
@@ -313,12 +538,36 @@ th {
   }
 
   .topbar {
-    flex-direction: column;
+    padding: 18px;
+  }
+
+  .card {
+    padding: 18px;
   }
 
   .grid.two,
   .grid.three {
     grid-template-columns: 1fr;
+  }
+
+  .glossary {
+    grid-template-columns: 1fr;
+  }
+
+  .grid.three button,
+  .row button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 540px) {
+  .row,
+  .links {
+    width: 100%;
+  }
+
+  .console {
+    font-size: 13px;
   }
 }
 

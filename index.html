@@ -4,15 +4,32 @@
     <script>
       (function () {
         const saved = localStorage.getItem('theme');
-        document.documentElement.setAttribute('data-theme', saved ?? 'dark');
+        const system = window.matchMedia('(prefers-color-scheme: light)').matches
+          ? 'light'
+          : 'dark';
+        document.documentElement.setAttribute('data-theme', saved ?? system);
       })();
     </script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>crypto-lab-paillier-gate</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="Interactive browser demo of the Paillier additive homomorphic cryptosystem: encrypt, add ciphertexts, tally private votes, and aggregate counts — all in TypeScript BigInt."
+    />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#090d16" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f3f7ff" media="(prefers-color-scheme: light)" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=optional"
+    />
+    <title>Paillier Cryptosystem — Additive Homomorphic Encryption Demo</title>
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
     <footer class="scripture-footer">

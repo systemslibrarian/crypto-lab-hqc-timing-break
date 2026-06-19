@@ -9,6 +9,7 @@ import {
   multiplyByScalar,
 } from '../src/paillier'
 import { simulatePrivateAggregation, simulatePrivateElection } from '../src/aggregation'
+import { proveBit, verifyBit } from '../src/zkproof'
 
 function check(condition: boolean, message: string): void {
   if (!condition) {
@@ -65,6 +66,17 @@ async function main(): Promise<void> {
     const election = simulatePrivateElection([1, 1, 0, 1, 0, 1, 0, 1, 1, 0], prod.publicKey)
     check(decrypt(election.encryptedTally, prod) === 6n, 'Election tally failed')
     results.push({ id: 9, description: '10-voter election tally decrypts to 6', pass: true, detail: 'OK' })
+
+    // Zero-knowledge 0/1 ballot proofs: honest ballots verify, cheats are rejected.
+    for (const v of [0, 1] as const) {
+      const enc = encrypt(BigInt(v), prod.publicKey)
+      const proof = await proveBit(v, enc.ciphertext, enc.r, prod.publicKey)
+      check(await verifyBit(proof, enc.ciphertext, prod.publicKey), `Honest ZK ballot ${v} rejected`)
+    }
+    const cheat = encrypt(5n, prod.publicKey)
+    const forged = await proveBit(1, cheat.ciphertext, cheat.r, prod.publicKey)
+    check(!(await verifyBit(forged, cheat.ciphertext, prod.publicKey)), 'Forged ZK ballot accepted')
+    results.push({ id: 10, description: 'ZK proofs: 0/1 ballots verify, value 5 rejected', pass: true, detail: 'OK' })
 
     for (const result of results) {
       console.log(`${result.id}. ${result.description}: PASS (${result.detail})`)
