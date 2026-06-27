@@ -3,30 +3,46 @@
   <head>
     <script>
       (function () {
-        const saved = localStorage.getItem('theme');
-        const system = window.matchMedia('(prefers-color-scheme: light)').matches
-          ? 'light'
-          : 'dark';
-        document.documentElement.setAttribute('data-theme', saved ?? system);
+        try {
+          var saved = localStorage.getItem('theme');
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var theme = saved || (prefersDark ? 'dark' : 'light');
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
       })();
     </script>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b7fab" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#12101a" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
     <meta
       name="description"
-      content="Interactive browser demo of the Paillier additive homomorphic cryptosystem: encrypt, add ciphertexts, tally private votes, and aggregate counts — all in TypeScript BigInt."
+      content="Interactive demo of the 2026 compiler-induced cache-timing attack on HQC (Dong & Guo): how Clang -O3 rewrites constant-time Reed-Muller selection into a leaking branch, a Flush+Reload oracle reads it, and Soft-ISD recovers the plaintext."
     />
-    <meta name="color-scheme" content="dark light" />
-    <meta name="theme-color" content="#090d16" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#f3f7ff" media="(prefers-color-scheme: light)" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=optional"
+    <meta name="author" content="systemslibrarian" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="HQC Cache-Timing Break — crypto-lab" />
+    <meta
+      property="og:description"
+      content="The first cache-timing full-decryption oracle on a PQC scheme: the compiler turns constant-time HQC into a Flush+Reload leak, and Soft-ISD recovers the key."
     />
-    <title>Paillier Cryptosystem — Additive Homomorphic Encryption Demo</title>
+    <meta property="og:url" content="https://systemslibrarian.github.io/crypto-lab-hqc-timing-break/" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="HQC Cache-Timing Break — crypto-lab" />
+    <meta
+      name="twitter:description"
+      content="Interactive lab: how compiler optimization reintroduces a cache-timing leak in HQC, and how a verified constant-time binary closes it."
+    />
+
+    <link rel="canonical" href="https://systemslibrarian.github.io/crypto-lab-hqc-timing-break/" />
+
+    <title>HQC Cache-Timing Break — crypto-lab</title>
   </head>
   <body>
 <!-- BEGIN crypto-lab shared header — managed; edit shared-header.html + re-run reapply-header.py
@@ -36,10 +52,6 @@
      Source of truth: github.com/systemslibrarian/crypto-lab/shared-header.html -->
 <style>
   .cl-topbar{
-    /* The bar is always dark (#0b1512) regardless of page theme, so header
-       text must always be light. Mix each lab's --accent toward near-white so
-       the hue still tints the brand but contrast stays >=4.5:1 on the bar even
-       when a lab's accent is dark (e.g. a light-theme #1a56db). */
     --cl-ink: color-mix(in srgb, var(--accent, #35d6bb) 60%, #eafff8);
     display:flex;align-items:center;justify-content:space-between;gap:1rem;
     padding:.7rem clamp(.9rem,3vw,2rem);
@@ -72,9 +84,6 @@
   }
   .cl-btn svg{width:15px;height:15px}
   .cl-icon{padding:.5rem .6rem;font-size:.95rem}
-  /* Skip-to-content link: first focusable element so keyboard users can bypass
-     this sticky header (WCAG 2.4.1). Hidden until focused. Fixed light-on-dark
-     pair (not --accent, which can be a dark hue on some labs) keeps contrast AA. */
   .cl-skip-link{
     position:absolute;left:.5rem;top:-3rem;z-index:1001;
     padding:.55rem 1rem;border-radius:0 0 10px 10px;
@@ -84,8 +93,6 @@
     transition:top .15s ease;
   }
   .cl-skip-link:focus{top:0;outline:2px solid var(--accent,#35d6bb);outline-offset:2px;}
-  /* hide each lab's own in-page theme toggle — the bar's toggle replaces it.
-     element stays in the DOM so the lab's theme JS keeps working. */
   body :is(#theme-toggle,#themeToggle,.theme-toggle,.theme-toggle-btn,[data-theme-toggle]):not(#cl-theme-toggle){display:none!important}
   @media(max-width:560px){
     .cl-sub{display:none}
@@ -128,9 +135,6 @@
         paint();
       });
     }
-    // A page may have only one banner landmark. This shared site header is it;
-    // demote any banner a lab also declared on its own page header (explicit
-    // role="banner", or an implicit <header> child of <body>) so landmarks stay unique.
     function dedupeBanner() {
       var bar = document.querySelector('.cl-topbar');
       if (!bar) return;
@@ -146,11 +150,9 @@
   })();
 </script>
 <!-- END crypto-lab shared header -->
-    <a class="skip-link" href="#main">Skip to main content</a>
+    <a class="skip-link" href="#playground-heading">Skip to interactive lab</a>
     <div id="app"></div>
+    <div id="live-status" class="sr-only" role="status" aria-live="polite"></div>
     <script type="module" src="/src/main.ts"></script>
-    <footer class="scripture-footer">
-      <p>So whether you eat or drink or whatever you do, do it all for the glory of God. — 1 Corinthians 10:31</p>
-    </footer>
   </body>
 </html>

@@ -1,41 +1,51 @@
 # crypto-lab-hqc-timing-break
 
 ## What It Is
-This demo is a browser implementation of the Paillier cryptosystem with additive homomorphism, implemented with BigInt arithmetic in TypeScript. It demonstrates public-key encryption and decryption, ciphertext addition, public plaintext addition, public scalar multiplication, and re-randomization without decrypting intermediate values. It also includes a zero-knowledge proof (a Cramer–Damgård–Schoenmakers OR-proof) that a ciphertext encrypts a valid 0/1 ballot, so a tally can reject ballot-stuffing without ever learning a vote. The core problem it solves is private summation: computing totals while keeping individual inputs hidden. Its security model is asymmetric cryptography based on the decisional composite residuosity assumption, with toy-size parameters included only for education.
+
+An interactive demonstration of the **2026 compiler-induced cache-timing attack on HQC** (Dong & Guo, IACR ePrint 2026/693) — the first cache-timing *full-decryption oracle* key-recovery attack reported against a post-quantum scheme. HQC (Hamming Quasi-Cyclic), the code-based KEM NIST selected for standardisation in 2025, ships an optimized implementation written in constant-time style: secret values are combined with **mask-based conditional selection**, never branched on. The twist is that the *compiler* breaks it. At `-O3`, the optimizer proves the mask is really a boolean and rewrites the branchless select into an `if/else`, so the inner Reed–Muller decoder now touches a **secret-dependent cache line**. An unprivileged, co-located attacker reads those lines with **Flush+Reload**, and because each read is noisy, a reliability-aware **Soft Information Set Decoding (Soft-ISD)** step turns the per-position predicates into the full recovered plaintext. This lab models the *shape* of that attack: an abstract cache hit/miss channel, a repetition code standing in for the inner Reed–Muller code, and a side-by-side of hard-decision vs Soft-ISD recovery — so the leak is visible without a full HQC build. Flip the binary back to constant-time and the channel goes silent.
 
 ## When to Use It
-- Private vote tallying where each vote is encrypted as 0/1 and only the final sum is decrypted, because Paillier supports ciphertext aggregation by multiplication.
-- Multi-party count aggregation across organizations, because each contributor can encrypt locally and share only ciphertexts.
-- Public weighted sum workflows in analytics, because ciphertexts can be raised to public weights and combined homomorphically.
-- Teaching additive-only homomorphism in applied cryptography courses, because the demo exposes both cryptographic operations and verification outputs.
-- Do not use this scheme for bulk file encryption, because Paillier ciphertexts are large and the primitive is designed for small numeric messages and aggregation.
+
+- **Teaching "constant-time source ≠ constant-time binary"** — the canonical, concrete example of an optimizer reintroducing a side channel the source had removed.
+- **Explaining Flush+Reload** — show how a shared cache line becomes a one-bit oracle, and how averaging many probes beats measurement noise.
+- **Motivating binary-level verification** — argue for checking the compiled artifact (and gating it in CI) across compilers and flags, not just reviewing the C.
+- **Showing why Soft-ISD matters** — demonstrate that reliability-weighted decoding recovers the key where a plain majority vote fails.
+- **Do NOT treat this as a working HQC exploit** — it is a teaching simulation with an abstract cache model and tiny parameters.
 
 ## Live Demo
-https://systemslibrarian.github.io/crypto-lab-hqc-timing-break/
 
-In the live page you can generate keypairs at multiple key sizes, then encrypt and decrypt values directly in the browser. You can also run homomorphic operations to verify that decrypted results match expected sums and scalar products. Controls include key size selection, message input, homomorphic operation inputs, voting inputs, and hospital aggregation inputs.
+**[systemslibrarian.github.io/crypto-lab-hqc-timing-break](https://systemslibrarian.github.io/crypto-lab-hqc-timing-break/)**
 
-## How to Learn From It
-The page is built to be understood, not just watched:
-- **Start with "The Big Idea."** It derives the one identity the whole scheme rests on — `E(a)·E(b) = E(a+b)` — in three lines, plus why `g = N + 1` makes `gᵐ` a single multiply.
-- **Switch to TOY (12-bit) mode.** Every value prints in full decimal with a step-by-step trace, so you can recompute `c = gᵐ · rᴺ mod N²` on a calculator and confirm it. The private panel even reveals the real `p`, `q`, `λ`, and `μ`.
-- **Encrypt the same number twice.** Two unrelated-looking ciphertexts both decrypt to the same value — semantic security from the fresh random `r`.
-- **Open the "Why this works" notes** under each exhibit for the reasoning, and read "What you cannot do" for the honest limits (no ciphertext × ciphertext; sums are mod N).
-- **Try the zero-knowledge exhibit.** Enter `1` to see a ballot proven valid and accepted; enter `5` to watch the same proof get rejected — homomorphic tallying only becomes a real protocol once every ballot is provably a 0 or 1.
+Set the secret message size, the inner-code redundancy, the cache noise, and how many Flush+Reload probes to average per position, then run the attack. The chart shows the per-position cache hit-rate — on the optimized binary, bars split above and below the 50% line by secret bit; bars are green when read correctly, red when noise flipped them. The recovery panel compares **Soft-ISD** against plain **hard-decision** majority and reports both accuracies and the total probe count. Toggle **Constant-time binary** and re-run: every select now touches the probed line, every bar pins near 100%, and recovery drops to chance. Below the lab, a "Same Source, Two Binaries" panel shows the exact mask-select C source and the branchy code the optimizer emits, followed by the timeline of HQC's four documented timing/cache leaks and a do/don't guide to keeping the binary honest.
 
-## How to Run Locally
+## What Can Go Wrong
+
+- **Optimizer rewrites a branchless select into a branch** — the root cause here; the source is constant-time but the emitted binary is not.
+- **Secret-dependent memory access** — even with flat wall-clock time, a data-dependent cache line is observable via Flush+Reload, Prime+Probe, or Evict+Time.
+- **Trusting source-level review** — "this function is constant-time" describes the C, not the machine code a given compiler/flag combination produces.
+- **Single-toolchain testing** — a different compiler or `-O` level can reintroduce the leak; constant-timeness is a property of each shipped binary.
+- **Assuming PQC math implies PQC safety** — a hard code/lattice problem does nothing to stop a side channel that ignores the math entirely.
+
+## Real-World Usage
+
+- **HQC standardisation** — NIST selected HQC in 2025 as a code-based KEM for algorithmic diversity alongside lattice-based ML-KEM; its implementation security is under active scrutiny.
+- **Binary-level constant-time verification** — dynamic and static checkers (dudect-style timing tests, ctgrind, Binsec/Rel) run on the compiled artifact, motivated directly by compiler-induced leaks like this one.
+- **Optimization barriers** — `value-barrier` helpers, `volatile`, and inline-asm fences that stop the optimizer from inferring a mask is boolean and rewriting the select.
+- **Flush+Reload hardening** — cache partitioning, constant-time gadgets, and avoiding secret-indexed memory, the standard responses to shared-cache side channels.
+- **Soft Information Set Decoding (Soft-ISD)** — reliability-aware decoding used by the attack to convert noisy side-channel predicates into a full key, and studied defensively to understand attacker capability.
+
+## Tech
+
+Vite + TypeScript, zero runtime dependencies. `src/engine.ts` models the Flush+Reload cache channel and the hard-decision vs Soft-ISD recovery; `src/data.ts` holds the source/compiled diff, the attack steps, the HQC leak timeline, and the defenses; `src/ui.ts` is the interactive lab. Dark mode follows your OS preference on first load and is toggleable + persisted. The UI is mobile-first, keyboard-accessible (skip link, visible focus, ARIA labels), and respects `prefers-reduced-motion`, `forced-colors`, and print.
+
 ```bash
-git clone https://github.com/systemslibrarian/crypto-lab-hqc-timing-break
-cd crypto-lab-hqc-timing-break
 npm install
-npm run dev
+npm run dev      # local dev server
+npm run build    # type-check + production build to dist/
 ```
 
-No environment variables are required.
-
-## Part of the Crypto-Lab Suite
-One of 60+ live browser demos at [systemslibrarian.github.io/crypto-lab](https://systemslibrarian.github.io/crypto-lab/) — spanning Atbash (600 BCE) through NIST FIPS 203/204/205 (2024).
+GitHub Pages deployment runs on every push to `main` via `.github/workflows/deploy.yml` (build → upload artifact → deploy).
 
 ---
 
-*"Whether you eat or drink, or whatever you do, do all to the glory of God." — 1 Corinthians 10:31*
+"So whether you eat or drink or whatever you do, do it all for the glory of God." — 1 Corinthians 10:31

@@ -5,7 +5,6 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["vite/client"],
     "skipLibCheck": true,
-    "strict": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",

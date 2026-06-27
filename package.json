@@ -6,13 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "deploy": "npm run build && gh-pages -d dist",
-    "preview": "vite preview",
-    "verify": "tsx scripts/verify-phase7.ts"
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "gh-pages": "^6.3.0",
-    "tsx": "^4.21.0",
     "typescript": "~6.0.2",
     "vite": "^8.0.4"
   }
