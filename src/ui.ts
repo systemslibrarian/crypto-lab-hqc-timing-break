@@ -42,12 +42,17 @@ function renderHero(): HTMLElement {
       </a>
       <p class="eyebrow">Post-Quantum · Compiler &amp; Cache</p>
       <h1 id="hero-heading">HQC Cache-Timing Break</h1>
+      <p class="paper-cite">
+        The first cache-timing full-decryption oracle key-recovery attack on a post-quantum scheme —
+        <a href="https://eprint.iacr.org/2026/693" target="_blank" rel="noopener">Dong &amp; Guo, “Breaking Optimized HQC,” IACR ePrint 2026/693 <span aria-hidden="true">↗</span></a>
+      </p>
       <p class="hero-text">
         The official HQC implementation is written to be constant-time — but the compiler
-        <em>optimizes the safety away</em>. At <code class="mono-inline">-O3</code> the mask-based
-        select in the Reed–Muller decoder becomes a secret-dependent branch, leaking one cache
-        line per bit. A <strong>Flush+Reload</strong> oracle reads those bits, and reliability-aware
-        <strong>Soft-ISD</strong> turns the noise into a full plaintext recovery. Flip the binary
+        <em>optimizes the safety away</em>. At <code class="mono-inline">-O3</code>, the optimizer
+        <strong>silently rewrites the constant-time Reed–Muller decoding</strong> — its mask-based
+        select — into branchy, secret-dependent code, leaking one cache line per bit. A
+        <strong>Flush+Reload</strong> oracle reads those bits, and reliability-aware
+        <strong>Soft-ISD</strong> turns the noise into full plaintext recovery. Flip the binary
         back to constant-time and the channel goes silent.
       </p>
       <details class="why-details">
