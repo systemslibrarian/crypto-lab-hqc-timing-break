@@ -525,10 +525,16 @@ function renderFooter(): HTMLElement {
       pins every probe to a hit. The recovery contrasts plain majority with a reliability-weighted
       Soft-ISD step, mirroring the documented attack’s structure. Educational use only.
     </p>
+    <nav class="footer-related" aria-label="Related demos">
+      <span class="footer-related-label">Related demos:</span>
+      <a href="https://systemslibrarian.github.io/crypto-lab-hqc-timing/" rel="noopener">HQC timing oracle</a>
+      <a href="https://systemslibrarian.github.io/crypto-lab-hqc-vault/" rel="noopener">HQC vault</a>
+      <a href="https://systemslibrarian.github.io/crypto-lab-kyberslash/" rel="noopener">KyberSlash</a>
+      <a href="https://systemslibrarian.github.io/crypto-lab-lattice-fault/" rel="noopener">Lattice fault</a>
+      <a href="https://systemslibrarian.github.io/crypto-lab-timing-oracle/" rel="noopener">Timing oracle</a>
+    </nav>
     <p class="footer-links">
       <a href="https://github.com/systemslibrarian/crypto-lab-hqc-timing-break" rel="noopener">Source on GitHub</a>
-      <span aria-hidden="true">·</span>
-      <a href="https://systemslibrarian.github.io/crypto-lab-hqc-timing/" rel="noopener">Sibling: HQC timing oracle</a>
       <span aria-hidden="true">·</span>
       <a href="https://github.com/systemslibrarian?tab=repositories&q=crypto-lab" rel="noopener">More crypto-lab demos</a>
     </p>

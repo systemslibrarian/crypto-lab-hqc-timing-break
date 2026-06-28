@@ -925,3 +925,24 @@
 	text-decoration: underline;
 	text-underline-offset: 2px;
 }
+
+.footer-related {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem 0.85rem;
+	align-items: center;
+	justify-content: center;
+	margin: 0.4rem 0;
+	font-size: 0.82rem;
+}
+.footer-related-label {
+	opacity: 0.7;
+	font-weight: 600;
+}
+.footer-related a {
+	color: var(--accent, #35d6bb);
+	text-decoration: none;
+}
+.footer-related a:hover {
+	text-decoration: underline;
+}
