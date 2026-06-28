@@ -34,18 +34,29 @@ Set the secret message size, the inner-code redundancy, the cache noise, and how
 - **Flush+Reload hardening** — cache partitioning, constant-time gadgets, and avoiding secret-indexed memory, the standard responses to shared-cache side channels.
 - **Soft Information Set Decoding (Soft-ISD)** — reliability-aware decoding used by the attack to convert noisy side-channel predicates into a full key, and studied defensively to understand attacker capability.
 
-## Tech
+## How to Run Locally
+
+```bash
+git clone https://github.com/systemslibrarian/crypto-lab-hqc-timing-break
+cd crypto-lab-hqc-timing-break
+npm install
+npm run dev
+```
 
 Vite + TypeScript, zero runtime dependencies. `src/engine.ts` models the Flush+Reload cache channel and the hard-decision vs Soft-ISD recovery; `src/data.ts` holds the source/compiled diff, the attack steps, the HQC leak timeline, and the defenses; `src/ui.ts` is the interactive lab. Dark mode follows your OS preference on first load and is toggleable + persisted. The UI is mobile-first, keyboard-accessible (skip link, visible focus, ARIA labels), and respects `prefers-reduced-motion`, `forced-colors`, and print.
 
-```bash
-npm install
-npm run dev      # local dev server
-npm run build    # type-check + production build to dist/
-```
+`npm run build` type-checks and produces a production build to `dist/`. GitHub Pages deployment runs on every push to `main` via `.github/workflows/deploy.yml` (build → upload artifact → deploy).
 
-GitHub Pages deployment runs on every push to `main` via `.github/workflows/deploy.yml` (build → upload artifact → deploy).
+## Related Demos
+
+- [crypto-lab-hqc-timing](https://systemslibrarian.github.io/crypto-lab-hqc-timing/) — HQC's BCH-decoder timing oracle, the constant-time sibling of this cache attack.
+- [crypto-lab-hqc-vault](https://systemslibrarian.github.io/crypto-lab-hqc-vault/) — the HQC KEM whose optimized decoder this attack targets.
+- [crypto-lab-kyberslash](https://systemslibrarian.github.io/crypto-lab-kyberslash/) — a timing attack on ML-KEM from variable-time division, the same class of implementation bug.
+- [crypto-lab-lattice-fault](https://systemslibrarian.github.io/crypto-lab-lattice-fault/) — fault-injection key recovery against ML-KEM/ML-DSA, another implementation-level PQC break.
+- [crypto-lab-timing-oracle](https://systemslibrarian.github.io/crypto-lab-timing-oracle/) — the general timing/cache side-channel pattern this attack is an instance of.
 
 ---
 
-"So whether you eat or drink or whatever you do, do it all for the glory of God." — 1 Corinthians 10:31
+*One of 60+ browser demos in the [Crypto Lab](https://crypto-lab.systemslibrarian.dev/) suite.*
+
+*"So whether you eat or drink or whatever you do, do it all for the glory of God." — 1 Corinthians 10:31*
