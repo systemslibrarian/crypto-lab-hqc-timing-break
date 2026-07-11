@@ -88,7 +88,7 @@ function codeCard(v: CodeView): string {
         <h3>${v.label}</h3>
         <span class="vs-chip ${v.tone === 'safe' ? 'vs-chip--stark' : 'vs-chip--snark'}">${v.tone === 'safe' ? 'no branch' : 'leaks'}</span>
       </div>
-      <pre class="code-block"><code>${esc(v.code)}</code></pre>
+      <pre class="code-block" tabindex="0" role="region" aria-label="${v.label} source (scrollable)"><code>${esc(v.code)}</code></pre>
       <p class="panel-copy">${v.caption}</p>
     </div>`;
 }
@@ -271,7 +271,7 @@ function renderLab(): HTMLElement {
 				const h = Math.max(2, o.hitRate * 100);
 				const cls = o.hardBit === o.trueBit ? 'bar--hit' : 'bar--miss';
 				const label = `Position ${o.position} (message bit ${o.messageBit}): hit-rate ${(o.hitRate * 100).toFixed(0)}%, read as ${o.hardBit}${o.hardBit === o.trueBit ? ', correct' : ', wrong'}`;
-				return `<div class="bar ${cls}" style="--bar-height:${h}%" title="pos ${o.position}: ${(o.hitRate * 100).toFixed(0)}% ${o.hardBit === o.trueBit ? '✓' : '✗'}" aria-label="${label}"></div>`;
+				return `<div class="bar ${cls}" role="img" style="--bar-height:${h}%" title="pos ${o.position}: ${(o.hitRate * 100).toFixed(0)}% ${o.hardBit === o.trueBit ? '✓' : '✗'}" aria-label="${label}"></div>`;
 			})
 			.join('');
 		const footnote = params.optimized
@@ -294,11 +294,11 @@ function renderLab(): HTMLElement {
 			.map((b, i) => {
 				const ok = b === truth[i];
 				const cls = `bit ${b ? 'bit--set' : ''} ${ok ? '' : 'bit--wrong'}`.trim();
-				return `<span class="${cls}" role="img" aria-label="Message bit ${i}: recovered ${b}${ok ? '' : ' (wrong)'}">${b}</span>`;
+				return `<span class="${cls}" role="listitem" aria-label="Message bit ${i}: recovered ${b}${ok ? '' : ' (wrong)'}">${b}</span>`;
 			})
 			.join('');
 		const truthCells = truth
-			.map((b, i) => `<span class="bit ${b ? 'bit--set' : ''}" role="img" aria-label="Message bit ${i}: actual ${b}">${b}</span>`)
+			.map((b, i) => `<span class="bit ${b ? 'bit--set' : ''}" role="listitem" aria-label="Message bit ${i}: actual ${b}">${b}</span>`)
 			.join('');
 		const k = truth.length;
 		const softPct = (res.accuracySoft * 100).toFixed(0);
