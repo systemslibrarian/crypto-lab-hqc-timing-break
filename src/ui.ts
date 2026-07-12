@@ -127,7 +127,9 @@ function renderLab(): HTMLElement {
         <p class="section-footnote">
           Each codeword position runs a secret-dependent select. On the optimized binary that select
           is a branch, so a Flush+Reload probe hits when the secret bit is 1 and misses when it is 0.
-          Average enough probes, weight by reliability, and Soft-ISD reconstructs the message.
+          Positions differ in how noisy their line is (set by <em>Noise unevenness</em>): a plain
+          majority vote lets a cluster of ambiguous positions outvote the clean ones, while Soft-ISD
+          weights each vote by its reliability. Raise unevenness and Soft-ISD pulls ahead of hard-decision.
         </p>
       </div>
     </div>
@@ -194,6 +196,16 @@ function renderLab(): HTMLElement {
         </div>
       </div>
 
+      <div class="control-group">
+        <label for="spread">Noise unevenness
+          <span class="control-help">how much per-position reliability varies — where Soft-ISD wins</span>
+        </label>
+        <div class="slider-row">
+          <input id="spread" name="spread" type="range" min="0" max="100" value="60" step="1" />
+          <output id="spread-val" class="mono-inline" for="spread">0.60</output>
+        </div>
+      </div>
+
       <div class="control-group control-group--toggle">
         <label class="toggle-wrap" for="ct">
           <input id="ct" name="ct" type="checkbox" />
@@ -235,6 +247,7 @@ function renderLab(): HTMLElement {
 	const repeats = $('repeats') as HTMLInputElement;
 	const noise = $('noise') as HTMLInputElement;
 	const probes = $('probes') as HTMLInputElement;
+	const spread = $('spread') as HTMLInputElement;
 	const ct = $('ct') as HTMLInputElement;
 	const runBtn = $('run') as HTMLButtonElement;
 	const rerollBtn = $('reroll') as HTMLButtonElement;
@@ -249,8 +262,9 @@ function renderLab(): HTMLElement {
 		$('repeats-val').textContent = repeats.value;
 		$('noise-val').textContent = (parseInt(noise.value, 10) / 100).toFixed(2);
 		$('probes-val').textContent = probes.value;
+		$('spread-val').textContent = (parseInt(spread.value, 10) / 100).toFixed(2);
 	};
-	[bits, repeats, noise, probes].forEach((i) => i.addEventListener('input', sync));
+	[bits, repeats, noise, probes, spread].forEach((i) => i.addEventListener('input', sync));
 
 	let currentSeed = randomSeed();
 	let seedLocked = false;
@@ -303,13 +317,17 @@ function renderLab(): HTMLElement {
 		const k = truth.length;
 		const softPct = (res.accuracySoft * 100).toFixed(0);
 		const hardPct = (res.accuracyHard * 100).toFixed(0);
+		const softBeatsHard = res.bitsCorrectSoft > res.bitsCorrectHard;
+		const edge = softBeatsHard
+			? ` Reliability weighting recovered ${res.bitsCorrectSoft - res.bitsCorrectHard} more bit${res.bitsCorrectSoft - res.bitsCorrectHard === 1 ? '' : 's'} than a plain majority vote here.`
+			: '';
 		const verdict = !params.optimized
 			? 'Defense held — the channel is silent, recovery is no better than guessing.'
 			: res.accuracySoft === 1
-				? 'Full plaintext recovered — a complete decryption oracle.'
+				? 'Full plaintext recovered — a complete decryption oracle.' + edge
 				: res.accuracySoft > 0.8
-					? 'Most of the message recovered; add probes or redundancy to finish.'
-					: 'Weak signal — raise probes/redundancy or lower cache noise.';
+					? 'Most of the message recovered; add probes or redundancy to finish.' + edge
+					: 'Weak signal — raise probes/redundancy or lower cache noise.' + edge;
 		return `
       <ul class="confusion-row" aria-label="Recovery comparison">
         <li class="confusion-cell confusion-cell--tp"><span class="confusion-val">${res.bitsCorrectSoft}/${k}</span><span class="confusion-label">Soft-ISD</span></li>
@@ -378,6 +396,7 @@ function renderLab(): HTMLElement {
 					repeats: parseInt(repeats.value, 10),
 					cacheNoise: parseInt(noise.value, 10) / 100,
 					probes: parseInt(probes.value, 10),
+					noiseSpread: parseInt(spread.value, 10) / 100,
 					optimized: !ct.checked,
 					rng: createRng((currentSeed ^ 0xa5a5a5a5) >>> 0),
 				};
@@ -431,6 +450,7 @@ function renderLab(): HTMLElement {
 	function applyPreset(p: Preset): void {
 		noise.value = String(Math.round(p.cacheNoise * 100));
 		probes.value = String(p.probes);
+		spread.value = String(Math.round(p.noiseSpread * 100));
 		ct.checked = !p.optimized;
 		sync();
 		section.querySelectorAll<HTMLButtonElement>('.preset-chip').forEach((b) => {
@@ -520,10 +540,14 @@ function renderFooter(): HTMLElement {
 	footer.setAttribute('role', 'contentinfo');
 	footer.innerHTML = `
     <p class="section-footnote">
-      Cache model is abstract: a Flush+Reload probe hits with probability (1 − cache-noise) when the
-      leaked codeword bit is 1 and with probability (cache-noise) when it is 0; a constant-time binary
-      pins every probe to a hit. The recovery contrasts plain majority with a reliability-weighted
-      Soft-ISD step, mirroring the documented attack’s structure. Educational use only.
+      Cache model is abstract: each codeword position gets its own misread probability (mean set by
+      cache-noise, scattered by noise-unevenness to mimic quiet vs contended cache lines); a
+      Flush+Reload probe then hits with probability (1 − that position's flip-prob) when the leaked
+      codeword bit is 1 and with (flip-prob) when it is 0. A constant-time binary pins every probe to
+      a hit. Because reliability genuinely varies across positions, the reliability-weighted Soft-ISD
+      step meaningfully beats a plain majority vote — mirroring the documented attack's structure.
+      The inner code here is a plain repetition code standing in for HQC's real Reed–Muller code, so
+      the decoding is illustrative, not a faithful RM decoder. Educational use only.
     </p>
     <nav class="footer-related" aria-label="Related demos">
       <span class="footer-related-label">Related demos:</span>

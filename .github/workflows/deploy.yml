@@ -30,6 +30,8 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+      - name: Unit tests (vitest)
+        run: npm test
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       - name: Accessibility gate (axe-core, WCAG A/AA)

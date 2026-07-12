@@ -4,12 +4,14 @@
 
 An interactive demonstration of the **2026 compiler-induced cache-timing attack on HQC** (Dong & Guo, IACR ePrint 2026/693) — the first cache-timing *full-decryption oracle* key-recovery attack reported against a post-quantum scheme. HQC (Hamming Quasi-Cyclic), the code-based KEM NIST selected for standardisation in 2025, ships an optimized implementation written in constant-time style: secret values are combined with **mask-based conditional selection**, never branched on. The twist is that the *compiler* breaks it. At `-O3`, the optimizer proves the mask is really a boolean and rewrites the branchless select into an `if/else`, so the inner Reed–Muller decoder now touches a **secret-dependent cache line**. An unprivileged, co-located attacker reads those lines with **Flush+Reload**, and because each read is noisy, a reliability-aware **Soft Information Set Decoding (Soft-ISD)** step turns the per-position predicates into the full recovered plaintext. This lab models the *shape* of that attack: an abstract cache hit/miss channel, a repetition code standing in for the inner Reed–Muller code, and a side-by-side of hard-decision vs Soft-ISD recovery — so the leak is visible without a full HQC build. Flip the binary back to constant-time and the channel goes silent.
 
+> **Caveat on the inner code.** Real HQC decodes a concatenated code whose inner code is **Reed–Muller RM(1, 7)** decoded by a fast Hadamard transform; the actual attack's Soft-ISD operates over that structured code. This lab substitutes a plain **repetition code** so the redundancy and the hard-vs-soft comparison are legible in a browser. The repetition stand-in captures *why* reliability weighting helps — heterogeneous per-position noise — but it is not the RM decoder, and the recovery here is illustrative rather than a faithful reproduction of the paper's decoding.
+
 ## When to Use It
 
 - **Teaching "constant-time source ≠ constant-time binary"** — the canonical, concrete example of an optimizer reintroducing a side channel the source had removed.
 - **Explaining Flush+Reload** — show how a shared cache line becomes a one-bit oracle, and how averaging many probes beats measurement noise.
 - **Motivating binary-level verification** — argue for checking the compiled artifact (and gating it in CI) across compilers and flags, not just reviewing the C.
-- **Showing why Soft-ISD matters** — demonstrate that reliability-weighted decoding recovers the key where a plain majority vote fails.
+- **Showing why Soft-ISD matters** — with heterogeneous per-position cache noise (some lines quiet, some contended), reliability-weighted decoding recovers bits that a plain unweighted majority vote gets wrong. The lab exposes a *noise-unevenness* control precisely so you can watch Soft-ISD pull ahead of hard-decision as the reliabilities spread out; at zero unevenness the two are near-equivalent, which is the honest baseline.
 - **Do NOT treat this as a working HQC exploit** — it is a teaching simulation with an abstract cache model and tiny parameters.
 
 ## Live Demo

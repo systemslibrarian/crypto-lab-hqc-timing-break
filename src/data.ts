@@ -111,11 +111,12 @@ export interface Preset {
 	cacheNoise: number;
 	probes: number;
 	optimized: boolean;
+	noiseSpread: number; // how unevenly noise is spread across positions
 }
 
 export const PRESETS: Preset[] = [
-	{ id: 'clean', label: 'Clean break', desc: 'Optimized binary, low cache noise, many probes. Full recovery.', cacheNoise: 0.08, probes: 24, optimized: true },
-	{ id: 'noisy', label: 'Noisy co-tenant', desc: 'Optimized binary, heavy cache contention. Soft-ISD earns its keep.', cacheNoise: 0.32, probes: 16, optimized: true },
-	{ id: 'few', label: 'Few probes', desc: 'Optimized but only a handful of Flush+Reload reads per position.', cacheNoise: 0.18, probes: 4, optimized: true },
-	{ id: 'fixed', label: 'Constant-time binary', desc: 'Optimizer tamed — every probe hits, the channel is silent.', cacheNoise: 0.08, probes: 24, optimized: false },
+	{ id: 'clean', label: 'Clean break', desc: 'Optimized binary, low cache noise, many probes. Full recovery.', cacheNoise: 0.08, probes: 24, optimized: true, noiseSpread: 0.4 },
+	{ id: 'noisy', label: 'Noisy co-tenant', desc: 'Optimized binary, uneven cache contention. Soft-ISD earns its keep.', cacheNoise: 0.3, probes: 16, optimized: true, noiseSpread: 0.95 },
+	{ id: 'few', label: 'Few probes', desc: 'Optimized but only a handful of Flush+Reload reads per position.', cacheNoise: 0.18, probes: 4, optimized: true, noiseSpread: 0.7 },
+	{ id: 'fixed', label: 'Constant-time binary', desc: 'Optimizer tamed — every probe hits, the channel is silent.', cacheNoise: 0.08, probes: 24, optimized: false, noiseSpread: 0.4 },
 ];
