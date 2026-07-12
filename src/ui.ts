@@ -1,7 +1,7 @@
 // ui.ts — HQC compiler-induced cache-timing attack lab.
 import { runAttack, makeMessage, createRng, randomSeed, formatSeed } from './engine.ts';
 import type { SimParams, AttackResult } from './engine.ts';
-import { FACTS, SOURCE_VIEW, COMPILED_VIEW, STEPS, TIMELINE, DEFENSES, PRESETS } from './data.ts';
+import { SOURCE_VIEW, COMPILED_VIEW, STEPS, TIMELINE, DEFENSES, PRESETS } from './data.ts';
 import type { Preset, CodeView } from './data.ts';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, html?: string): HTMLElementTagNameMap[K] {
@@ -29,54 +29,22 @@ function announce(message: string): void {
 
 function renderHero(): HTMLElement {
 	// A labeled <section> (region landmark), not a second <header>/banner — the
-	// shared site bar is the page's only banner.
+	// shared site bar is the page's only banner. The inner .cl-hero is a plain
+	// div (not <header>) so it adds no second banner landmark.
 	const hero = el('section', 'hero-panel');
 	hero.setAttribute('aria-labelledby', 'hero-heading');
 	hero.innerHTML = `
-    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to light mode" aria-pressed="true">
-      <span aria-hidden="true">\u{1F319}</span>
-    </button>
-    <div class="hero-copy">
-      <a class="portfolio-badge" href="https://github.com/systemslibrarian?tab=repositories&q=crypto-lab" rel="noopener">
-        <span aria-hidden="true">❖</span> crypto-lab · portfolio
-      </a>
-      <p class="eyebrow">Post-Quantum · Compiler &amp; Cache</p>
-      <h1 id="hero-heading">HQC Cache-Timing Break</h1>
-      <p class="paper-cite">
-        The first cache-timing full-decryption oracle key-recovery attack on a post-quantum scheme —
-        <a href="https://eprint.iacr.org/2026/693" target="_blank" rel="noopener">Dong &amp; Guo, “Breaking Optimized HQC,” IACR ePrint 2026/693 <span aria-hidden="true">↗</span></a>
-      </p>
-      <p class="hero-text">
-        The official HQC implementation is written to be constant-time — but the compiler
-        <em>optimizes the safety away</em>. At <code class="mono-inline">-O3</code>, the optimizer
-        <strong>silently rewrites the constant-time Reed–Muller decoding</strong> — its mask-based
-        select — into branchy, secret-dependent code, leaking one cache line per bit. A
-        <strong>Flush+Reload</strong> oracle reads those bits, and reliability-aware
-        <strong>Soft-ISD</strong> turns the noise into full plaintext recovery. Flip the binary
-        back to constant-time and the channel goes silent.
-      </p>
-      <details class="why-details">
-        <summary><span class="why-summary-text">Is this a real attack?</span></summary>
-        <p>
-          Yes. Dong &amp; Guo (IACR ePrint 2026/693, 2026) reported the first cache-timing
-          <em>full-decryption oracle</em> key-recovery attack on a post-quantum scheme, against
-          the official optimized HQC implementation. The leak is introduced by the compiler, not
-          the source: secure mask-based selection is rewritten into data-dependent control flow.
-          This lab models the <em>shape</em> of that attack with an abstract cache model and tiny
-          parameters.
-        </p>
-      </details>
+    <div class="cl-hero">
+      <div class="cl-hero-main">
+        <h1 id="hero-heading" class="cl-hero-title">HQC Cache-Timing Break</h1>
+        <p class="cl-hero-sub">HQC · Compiler-Induced Flush+Reload · IACR 2026/693</p>
+        <p class="cl-hero-desc">Run a Flush+Reload oracle against a <code class="mono-inline">-O3</code> HQC binary whose constant-time mask-select the compiler rewrote into a secret-dependent branch, then watch reliability-weighted Soft-ISD decoding turn the noisy cache probes into full plaintext recovery.</p>
+      </div>
+      <aside class="cl-hero-why" aria-label="Why it matters">
+        <span class="cl-hero-why-label">WHY IT MATTERS</span>
+        <p class="cl-hero-why-text">A source audited to be constant-time is not enough: the optimizer can silently reintroduce the leak in the shipped binary. This was the first cache-timing full-decryption oracle on a NIST post-quantum scheme, so hardening PQC means verifying the compiled artifact.</p>
+      </aside>
     </div>
-    <aside class="hero-metric-card" aria-label="Attack at a glance">
-      <p class="hero-metric-label">${FACTS.scheme}</p>
-      <dl class="hero-stats">
-        <div class="hero-stat-row"><dt>Status</dt><dd>${FACTS.status}</dd></div>
-        <div class="hero-stat-row"><dt>Target</dt><dd>Optimized (AVX2) build</dd></div>
-        <div class="hero-stat-row"><dt>Channel</dt><dd>Flush+Reload</dd></div>
-        <div class="hero-stat-row"><dt>Result</dt><dd>Full-decryption oracle</dd></div>
-      </dl>
-      <p class="hero-metric-note">Constant-time source ≠ constant-time binary.</p>
-    </aside>
   `;
 	return hero;
 }
