@@ -490,9 +490,20 @@
 .bar {
   flex: 1;
   min-width: 3px;
+  padding: 0;
+  border: 0;
   border-radius: 4px 4px 0 0;
   height: var(--bar-height, 2%);
-  transition: height 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  align-self: flex-end;
+  cursor: pointer;
+  transition: height 360ms cubic-bezier(0.22, 1, 0.36, 1), filter 140ms ease, box-shadow 140ms ease;
+}
+
+.bar:hover,
+.bar:focus-visible {
+  filter: brightness(1.12) saturate(1.08);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+  outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -950,3 +961,441 @@
 .footer-related a:hover {
 	text-decoration: underline;
 }
+
+/* --- tiny inline mono badge --------------------------------- */
+.mono-inline--tiny {
+  min-width: 0;
+  padding: 1px 6px;
+  font-size: 0.78em;
+  vertical-align: baseline;
+}
+
+/* --- chart dual-encoding legend ----------------------------- */
+.chart-encoding {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background-color: var(--input-bg);
+  color: var(--ink);
+  line-height: 1.6;
+  font-size: 0.88rem;
+}
+
+.chart-encoding strong { color: var(--ink-strong); }
+
+.enc-key {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 0.8em;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--ink-strong);
+  border: 1px solid var(--line-strong);
+  background-color: var(--panel-strong);
+}
+
+.enc-key--tall::before { content: '▲ '; }
+.enc-key--short::before { content: '▼ '; }
+.enc-key--hit {
+  color: var(--accent-4);
+  border-color: color-mix(in oklab, var(--accent-4) 45%, var(--line));
+}
+.enc-key--miss {
+  color: var(--accent-2);
+  border-color: color-mix(in oklab, var(--accent-2) 45%, var(--line));
+}
+
+/* --- bar <-> code-diff bridge ------------------------------- */
+.bar-bridge {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background-color: var(--input-bg);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.bar-bridge.is-active {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--line));
+  box-shadow: var(--shadow-soft);
+}
+
+.bar-bridge-title {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.bar-bridge-code {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background-color: var(--mono-block-bg);
+  color: var(--mono-block-fg);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.bb-line {
+  display: block;
+  padding: 1px 6px;
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+}
+
+.bb-line--hot {
+  background-color: color-mix(in oklab, var(--accent-3) 26%, transparent);
+  border-left-color: var(--accent-3);
+  color: #fff9f2;
+}
+
+.bb-note { opacity: 0.72; }
+
+.bar-bridge-say {
+  margin: 10px 0 0;
+  color: var(--ink);
+  line-height: 1.55;
+  font-size: 0.9rem;
+}
+
+.bar-bridge-say strong { color: var(--ink-strong); }
+
+.bb-hit {
+  font-weight: 700;
+  color: var(--accent-4);
+}
+.bb-miss {
+  font-weight: 700;
+  color: var(--accent-2);
+}
+
+/* --- cache-hit primer + fast/slow strip --------------------- */
+.cache-primer {
+  margin: 18px 0 0;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background-color: color-mix(in oklab, var(--accent) 5%, var(--panel-strong));
+}
+
+.cache-primer-title {
+  margin: 0 0 6px;
+  color: var(--ink-strong);
+  font-size: 1rem;
+  font-weight: 700;
+}
+.cache-primer-title em { font-style: italic; color: var(--accent); }
+
+.cache-primer-body {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.6;
+  font-size: 0.92rem;
+}
+.cache-primer-body strong { color: var(--ink-strong); }
+.cache-primer-body em { font-style: italic; color: var(--ink-strong); font-weight: 600; }
+
+.cache-primer-note {
+  margin: 12px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.cache-primer-note em { font-style: italic; color: var(--ink); font-weight: 600; }
+
+.fs-tag {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--line-strong);
+}
+.fs-tag--hit {
+  color: var(--accent-4);
+  background-color: color-mix(in oklab, var(--accent-4) 16%, transparent);
+  border-color: color-mix(in oklab, var(--accent-4) 45%, var(--line));
+}
+.fs-tag--miss {
+  color: var(--accent-2);
+  background-color: color-mix(in oklab, var(--accent-2) 16%, transparent);
+  border-color: color-mix(in oklab, var(--accent-2) 45%, var(--line));
+}
+
+.fs-strip {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+}
+
+.fs-lane {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--line);
+}
+
+.fs-lane-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.fs-track {
+  position: relative;
+  height: 20px;
+  border-radius: 999px;
+  background: linear-gradient(90deg,
+    color-mix(in oklab, var(--accent-4) 40%, transparent) 0%,
+    color-mix(in oklab, var(--accent-2) 40%, transparent) 100%);
+}
+
+.fs-marker {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--on-accent);
+}
+.fs-marker--fast { left: 4px; background-color: var(--accent-4); }
+.fs-marker--slow { right: 4px; background-color: var(--accent-2); }
+
+.fs-scale {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+@media (min-width: 560px) {
+  .fs-lane {
+    grid-template-columns: minmax(0, 1fr) minmax(120px, 1.4fr) auto;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+/* --- Soft-ISD vote trace ------------------------------------ */
+.soft-vote {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background-color: var(--input-bg);
+}
+
+.soft-vote summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--ink-strong);
+  list-style: none;
+  min-height: var(--tap-target);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.soft-vote summary::-webkit-details-marker { display: none; }
+.soft-vote summary::before {
+  content: '▸';
+  color: var(--accent);
+  transition: transform 180ms ease;
+}
+.soft-vote[open] summary::before { transform: rotate(90deg); }
+
+.soft-vote-intro {
+  margin: 10px 0 0;
+  color: var(--ink);
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+.soft-vote-intro strong { color: var(--ink-strong); }
+.soft-vote-intro em { font-style: italic; color: var(--ink-strong); font-weight: 600; }
+
+.soft-vote-scroll {
+  margin-top: 12px;
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+
+.soft-vote-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.soft-vote-table caption { text-align: left; }
+
+.soft-vote-table th,
+.soft-vote-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.soft-vote-table th {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 700;
+  background-color: var(--panel-strong);
+}
+
+.soft-vote-table tbody tr:last-child td { border-bottom: 0; }
+
+.sv-hit {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--ink-strong);
+}
+
+.sv-chip {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid var(--line-strong);
+}
+.sv-chip--one {
+  color: var(--accent);
+  background-color: color-mix(in oklab, var(--accent) 16%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--line));
+}
+.sv-chip--zero {
+  color: var(--ink-soft);
+  background-color: var(--panel-strong);
+}
+
+.sv-barcell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 130px;
+}
+
+.sv-weight {
+  position: relative;
+  display: inline-block;
+  flex: 1;
+  min-width: 48px;
+  height: 8px;
+  border-radius: 999px;
+  background-color: color-mix(in oklab, var(--ink-soft) 22%, transparent);
+  overflow: hidden;
+}
+.sv-weight-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--accent);
+}
+
+.sv-llr {
+  position: relative;
+  display: inline-block;
+  flex: 1;
+  min-width: 48px;
+  height: 8px;
+  border-radius: 999px;
+  background-color: color-mix(in oklab, var(--ink-soft) 22%, transparent);
+  overflow: hidden;
+}
+.sv-llr-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  border-radius: 999px;
+}
+.sv-llr--one .sv-llr-fill { background-color: var(--accent-4); }
+.sv-llr--zero .sv-llr-fill { background-color: var(--accent-2); }
+
+.sv-num {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-strong);
+  min-width: 3.2em;
+  text-align: right;
+}
+
+.tally-row {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 520px) {
+  .tally-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.tally-cell {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background-color: var(--panel-strong);
+}
+
+.tally-cell--ok { border-color: color-mix(in oklab, var(--accent-4) 45%, var(--line)); }
+.tally-cell--bad { border-color: color-mix(in oklab, var(--accent-2) 45%, var(--line)); }
+
+.tally-label {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
+.tally-val {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+.tally-val strong { color: var(--ink-strong); }
+
+.tally-flag {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.tally-cell--ok .tally-flag { color: var(--accent-4); }
+.tally-cell--bad .tally-flag { color: var(--accent-2); }
+
+.soft-vote-note {
+  margin: 12px 0 0;
+  color: var(--ink);
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+.soft-vote-note strong { color: var(--ink-strong); }
+.soft-vote-note em { font-style: italic; color: var(--ink-strong); font-weight: 600; }

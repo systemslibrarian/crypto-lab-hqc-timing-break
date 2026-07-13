@@ -1,6 +1,6 @@
 // ui.ts — HQC compiler-induced cache-timing attack lab.
-import { runAttack, makeMessage, createRng, randomSeed, formatSeed } from './engine.ts';
-import type { SimParams, AttackResult } from './engine.ts';
+import { runAttack, makeMessage, createRng, randomSeed, formatSeed, llr } from './engine.ts';
+import type { SimParams, AttackResult, PositionObs } from './engine.ts';
 import { SOURCE_VIEW, COMPILED_VIEW, STEPS, TIMELINE, DEFENSES, PRESETS } from './data.ts';
 import type { Preset, CodeView } from './data.ts';
 
@@ -122,6 +122,32 @@ function renderLab(): HTMLElement {
       </li>`,
 			).join('')}
     </ol>
+
+    <div class="cache-primer" role="note" aria-labelledby="cache-primer-title">
+      <p class="cache-primer-title" id="cache-primer-title">Why a cache <em>hit</em> leaks a secret</p>
+      <p class="cache-primer-body">
+        Attacker and victim share the same library page in memory. The attacker
+        <strong>flushes</strong> that line out of cache (<code class="mono-inline mono-inline--tiny">clflush</code>),
+        lets the victim's branch run, then <strong>re-reads</strong> the line and times it. If the victim's
+        branch touched the line, it is back in cache and the re-read is <strong>fast</strong> — a
+        <span class="fs-tag fs-tag--hit">HIT</span>. If not, the re-read pulls from RAM and is
+        <strong>slow</strong> — a <span class="fs-tag fs-tag--miss">miss</span>. So a hit means
+        <em>someone else touched this line recently</em>, and that "someone" is the secret-dependent branch.
+      </p>
+      <div class="fs-strip" aria-hidden="true">
+        <div class="fs-lane fs-lane--hit">
+          <span class="fs-lane-label"><span class="fs-tag fs-tag--hit">HIT</span> branch touched the line</span>
+          <span class="fs-track"><span class="fs-marker fs-marker--fast">fast</span></span>
+          <span class="fs-scale">← ~50 cycles (L1/L2)</span>
+        </div>
+        <div class="fs-lane fs-lane--miss">
+          <span class="fs-lane-label"><span class="fs-tag fs-tag--miss">miss</span> branch skipped it</span>
+          <span class="fs-track"><span class="fs-marker fs-marker--slow">slow</span></span>
+          <span class="fs-scale">~200+ cycles (RAM) →</span>
+        </div>
+      </div>
+      <p class="cache-primer-note">A single read is noisy, so the attacker repeats it many times per position — the <em>Probes per position</em> slider below.</p>
+    </div>
 
     <form class="control-bar" id="lab-controls" aria-label="Attack simulation controls" onsubmit="return false">
       <div class="control-group">
@@ -249,23 +275,39 @@ function renderLab(): HTMLElement {
 
 	function chart(res: AttackResult, params: SimParams): string {
 		const bars = res.observations
-			.map((o) => {
+			.map((o, idx) => {
 				const h = Math.max(2, o.hitRate * 100);
 				const cls = o.hardBit === o.trueBit ? 'bar--hit' : 'bar--miss';
-				const label = `Position ${o.position} (message bit ${o.messageBit}): hit-rate ${(o.hitRate * 100).toFixed(0)}%, read as ${o.hardBit}${o.hardBit === o.trueBit ? ', correct' : ', wrong'}`;
-				return `<div class="bar ${cls}" role="img" style="--bar-height:${h}%" title="pos ${o.position}: ${(o.hitRate * 100).toFixed(0)}% ${o.hardBit === o.trueBit ? '✓' : '✗'}" aria-label="${label}"></div>`;
+				const label = `Position ${o.position} (message bit ${o.messageBit}): secret bit ${o.trueBit}, hit-rate ${(o.hitRate * 100).toFixed(0)}%, read as ${o.hardBit}${o.hardBit === o.trueBit ? ', correct' : ', wrong'}`;
+				return `<button type="button" class="bar ${cls}" style="--bar-height:${h}%" data-idx="${idx}" title="pos ${o.position}: secret ${o.trueBit}, ${(o.hitRate * 100).toFixed(0)}% ${o.hardBit === o.trueBit ? '✓' : '✗'}" aria-label="${label}"></button>`;
 			})
 			.join('');
 		const footnote = params.optimized
 			? 'Optimized binary: a probe mostly hits for secret bit 1 and misses for 0 — bars split above and below the 50% line.'
 			: 'Constant-time binary: the select touches the probed line every time, so every bar pins near 100% — no information about the secret.';
+		// [HIGH] Bridge: a compact copy of the compiled branch that lights up per
+		// hovered/focused bar, tying one bar to one firing of the leaking select.
 		return `
       <div class="timing-chart">
-        <div class="chart-area">
+        <p class="chart-encoding" id="chart-encoding">
+          <strong>Reading a bar.</strong> Height = probe hit-rate:
+          <span class="enc-key enc-key--tall">tall = secret bit 1</span>,
+          <span class="enc-key enc-key--short">short = secret bit 0</span>.
+          Color = did noise flip the read:
+          <span class="enc-key enc-key--hit">green = correct</span>,
+          <span class="enc-key enc-key--miss">red = wrong</span>.
+        </p>
+        <div class="chart-area" aria-describedby="chart-encoding">
           <div class="threshold-line" style="bottom:50%"><span>hit / miss</span></div>
           ${bars}
         </div>
         <p class="section-footnote">${footnote}</p>
+        <div class="bar-bridge" data-optimized="${params.optimized ? '1' : '0'}">
+          <p class="bar-bridge-title">This bar is one firing of the leaking select</p>
+          <pre class="bar-bridge-code" aria-hidden="true"><code><span class="bb-line" data-line="1">if (bit) out = a;   <span class="bb-note">// touches cache line for a</span></span>
+<span class="bb-line" data-line="0">else     out = b;   <span class="bb-note">// touches cache line for b</span></span></code></pre>
+          <p class="bar-bridge-say" id="bar-bridge-say" aria-live="polite">Hover or focus a bar to trace it back to the branch.</p>
+        </div>
       </div>`;
 	}
 
@@ -314,10 +356,169 @@ function renderLab(): HTMLElement {
     `;
 	}
 
+	// [HIGH] Soft-ISD explainer. For ONE message bit, expose the per-position
+	// evidence the decoder actually uses: observed hit-rate, the reliability
+	// weight |p-0.5|, and the signed LLR vote log(p/(1-p)). Then contrast the two
+	// tallies the engine computes — a plain head-count (majority) vs the summed
+	// LLR (Soft-ISD) — so the learner can SEE why weighting wins, not take it on
+	// faith. Everything here is derived from the same observations runAttack
+	// produced; nothing is fabricated.
+	function pickInstructiveBit(res: AttackResult, message: Uint8Array): number {
+		const k = message.length;
+		if (k === 0) return 0;
+		// Prefer a bit where Soft-ISD is right AND hard-decision is wrong: the
+		// headline "reliability weighting rescues a bit majority loses" case.
+		for (let i = 0; i < k; i++) {
+			if (res.recoveredSoft[i] === message[i] && res.recoveredHard[i] !== message[i]) return i;
+		}
+		// Otherwise the bit whose positions have the widest reliability spread —
+		// where the mechanism is most visible even if both decoders agree.
+		let best = 0;
+		let bestSpread = -1;
+		for (let i = 0; i < k; i++) {
+			const g = res.observations.filter((o) => o.messageBit === i);
+			if (!g.length) continue;
+			const rels = g.map((o) => o.reliability);
+			const spread = Math.max(...rels) - Math.min(...rels);
+			if (spread > bestSpread) {
+				bestSpread = spread;
+				best = i;
+			}
+		}
+		return best;
+	}
+
+	function softVote(res: AttackResult, message: Uint8Array, params: SimParams): string {
+		const k = message.length;
+		if (k === 0 || !params.optimized) return '';
+		const bitIdx = pickInstructiveBit(res, message);
+		const group: PositionObs[] = res.observations.filter((o) => o.messageBit === bitIdx);
+		if (!group.length) return '';
+
+		const trueBit = message[bitIdx] ?? 0;
+		const maxAbsLlr = Math.max(1e-6, ...group.map((o) => Math.abs(llr(o.hitRate))));
+		const ones = group.reduce((a, o) => a + o.hardBit, 0);
+		const zeros = group.length - ones;
+		const majorityBit = ones * 2 > group.length ? 1 : 0;
+		const llrSum = group.reduce((a, o) => a + llr(o.hitRate), 0);
+		const softBit = llrSum > 0 ? 1 : 0;
+
+		const rows = group
+			.map((o) => {
+				const l = llr(o.hitRate);
+				const votesOne = l > 0;
+				const rel = Math.min(1, o.reliability); // |p-0.5|*2 in 0..1
+				const relPct = (rel * 100).toFixed(0);
+				const llrPct = (Math.min(1, Math.abs(l) / maxAbsLlr) * 100).toFixed(0);
+				const hardOne = o.hardBit === 1;
+				return `
+        <tr>
+          <td class="sv-hit">${(o.hitRate * 100).toFixed(0)}%</td>
+          <td>
+            <span class="sv-chip ${hardOne ? 'sv-chip--one' : 'sv-chip--zero'}">reads ${o.hardBit}</span>
+          </td>
+          <td class="sv-barcell">
+            <span class="sv-weight"><span class="sv-weight-fill" style="width:${relPct}%"></span></span>
+            <span class="sv-num">${rel.toFixed(2)}</span>
+          </td>
+          <td class="sv-barcell">
+            <span class="sv-llr sv-llr--${votesOne ? 'one' : 'zero'}"><span class="sv-llr-fill" style="width:${llrPct}%"></span></span>
+            <span class="sv-num">${l >= 0 ? '+' : '−'}${Math.abs(l).toFixed(2)}</span>
+          </td>
+        </tr>`;
+			})
+			.join('');
+
+		const majorityOk = majorityBit === trueBit;
+		const softOk = softBit === trueBit;
+		const rescued = softOk && !majorityOk;
+		const note = rescued
+			? `Here a cluster of low-reliability positions <strong>won the head-count</strong> (majority read ${majorityBit}) but their votes carry almost no weight, so the summed LLR still lands on the true bit ${trueBit}. That is the whole point of Soft-ISD.`
+			: majorityBit === softBit
+				? `On this bit both tallies agree (${softBit}). Raise <em>Noise unevenness</em> and re-run: as reliabilities spread out, look for a bit where the head-count and the weighted sum split.`
+				: `The head-count and weighted sum disagree on this bit — reliability weighting overrides the raw vote count.`;
+
+		return `
+      <details class="soft-vote">
+        <summary>Why Soft-ISD beats majority vote — trace one bit</summary>
+        <p class="soft-vote-intro">
+          Message bit <strong>${bitIdx}</strong> is carried by ${group.length} codeword positions.
+          Each position reads a noisy 0 or 1. <strong>Majority vote</strong> counts those reads at full weight.
+          <strong>Soft-ISD</strong> instead weights each by its reliability <span class="mono-inline mono-inline--tiny">|p−0.5|</span>
+          and sums the signed log-likelihood vote <span class="mono-inline mono-inline--tiny">log(p/(1−p))</span>.
+        </p>
+        <div class="soft-vote-scroll" tabindex="0" role="region" aria-label="Per-position votes for the traced message bit (scrollable)">
+          <table class="soft-vote-table">
+            <caption class="sr-only">Per-position hit-rate, hard read, reliability weight, and signed LLR vote for message bit ${bitIdx}</caption>
+            <thead>
+              <tr>
+                <th scope="col">Hit-rate</th>
+                <th scope="col">Hard read</th>
+                <th scope="col">Reliability |p−0.5|</th>
+                <th scope="col">LLR vote</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <ul class="tally-row" aria-label="Tally comparison">
+          <li class="tally-cell ${majorityOk ? 'tally-cell--ok' : 'tally-cell--bad'}">
+            <span class="tally-label">Majority (head-count)</span>
+            <span class="tally-val">${ones}×&hairsp;1 vs ${zeros}×&hairsp;0 → <strong>${majorityBit}</strong></span>
+            <span class="tally-flag">${majorityOk ? '✓ matches secret' : '✗ wrong'}</span>
+          </li>
+          <li class="tally-cell ${softOk ? 'tally-cell--ok' : 'tally-cell--bad'}">
+            <span class="tally-label">Soft-ISD (Σ LLR)</span>
+            <span class="tally-val">Σ = ${llrSum >= 0 ? '+' : '−'}${Math.abs(llrSum).toFixed(2)} → <strong>${softBit}</strong></span>
+            <span class="tally-flag">${softOk ? '✓ matches secret' : '✗ wrong'}</span>
+          </li>
+        </ul>
+        <p class="soft-vote-note">${note}</p>
+      </details>`;
+	}
+
 	function chipFor(res: AttackResult, params: SimParams): { cls: string; text: string } {
 		if (!params.optimized) return { cls: 'vs-chip vs-chip--stark', text: 'Defended' };
 		if (res.accuracySoft === 1) return { cls: 'vs-chip vs-chip--snark', text: 'Full recovery' };
 		return { cls: 'vs-chip vs-chip--tie', text: 'Partial' };
+	}
+
+	// [HIGH] Attach hover/focus behavior to each bar so it lights up the matching
+	// branch line in the mini compiled panel and narrates the causal chain for
+	// that one position: secret bit -> which line the branch touches -> hit/miss.
+	function wireBarBridge(res: AttackResult, params: SimParams): void {
+		const bridge = labResults.querySelector('.bar-bridge');
+		const say = labResults.querySelector('#bar-bridge-say');
+		const bars = labResults.querySelectorAll<HTMLButtonElement>('.bar');
+		if (!bridge || !say) return;
+		const codeLines = bridge.querySelectorAll<HTMLElement>('.bb-line');
+		const clear = () => {
+			bridge.classList.remove('is-active');
+			codeLines.forEach((c) => c.classList.remove('bb-line--hot'));
+			say.textContent = params.optimized
+				? 'Hover or focus a bar to trace it back to the branch.'
+				: 'Constant-time binary: the select touches both lines regardless of the secret — no bar reveals a bit.';
+		};
+		const activate = (idx: number) => {
+			const o = res.observations[idx];
+			if (!o) return;
+			bridge.classList.add('is-active');
+			const line = o.trueBit === 1 ? 1 : 0;
+			codeLines.forEach((c) => c.classList.toggle('bb-line--hot', c.dataset['line'] === String(line)));
+			const touched = o.trueBit === 1 ? 'a' : 'b';
+			const outcome = o.hardBit === o.trueBit ? 'read correctly' : 'flipped by noise';
+			say.innerHTML = params.optimized
+				? `Position ${o.position}: <strong>secret bit = ${o.trueBit}</strong> → branch touches line <strong>${touched}</strong> → probe ${o.trueBit === 1 ? '<span class="bb-hit">HIT</span>' : '<span class="bb-miss">miss</span>'} (${(o.hitRate * 100).toFixed(0)}% over ${params.probes} reads, ${outcome}).`
+				: `Position ${o.position}: the constant-time select touches <strong>both</strong> lines, so this probe hits regardless of the secret bit — the bar carries no information.`;
+		};
+		bars.forEach((bar) => {
+			const idx = parseInt(bar.dataset['idx'] ?? '-1', 10);
+			bar.addEventListener('mouseenter', () => activate(idx));
+			bar.addEventListener('focus', () => activate(idx));
+			bar.addEventListener('mouseleave', clear);
+			bar.addEventListener('blur', clear);
+		});
+		clear();
 	}
 
 	function render(message: Uint8Array, res: AttackResult, params: SimParams): void {
@@ -339,8 +540,10 @@ function renderLab(): HTMLElement {
         <div class="panel-card">
           <h3>Recovery</h3>
           <div class="recovery-out">${recovery(res, message, params)}</div>
+          ${softVote(res, message, params)}
         </div>
       </div>`;
+		wireBarBridge(res, params);
 		announce(
 			params.optimized
 				? `Attack complete. Soft-ISD recovered ${res.bitsCorrectSoft} of ${message.length} message bits, ${(res.accuracySoft * 100).toFixed(0)}%.`
