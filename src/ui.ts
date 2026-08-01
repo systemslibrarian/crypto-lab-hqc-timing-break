@@ -91,7 +91,7 @@ function renderLab(): HTMLElement {
     <div class="section-heading-row">
       <div>
         <p class="section-kicker">Live attack</p>
-        <h2 id="playground-heading">Flush+Reload Oracle</h2>
+        <h2 id="playground-heading" tabindex="-1">Flush+Reload Oracle</h2>
         <p class="section-footnote">
           Each codeword position runs a secret-dependent select. On the optimized binary that select
           is a branch, so a Flush+Reload probe hits when the secret bit is 1 and misses when it is 0.
@@ -740,6 +740,11 @@ function renderFooter(): HTMLElement {
 
 export function mountApp(root: HTMLDivElement): void {
 	const shell = el('div', 'page-shell');
-	shell.append(renderHero(), renderDiff(), renderLab(), renderTimeline(), renderDefenses(), renderFooter());
+	// index.html has no <main>, so the lab content gets one here. The footer stays
+	// a sibling of <main> so its contentinfo landmark remains top level.
+	const main = el('main', 'page-main');
+	main.id = 'main-content';
+	main.append(renderHero(), renderDiff(), renderLab(), renderTimeline(), renderDefenses());
+	shell.append(main, renderFooter());
 	root.appendChild(shell);
 }
