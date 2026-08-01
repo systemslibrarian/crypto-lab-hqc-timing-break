@@ -64,14 +64,14 @@ export const TIMELINE: TimelineEntry[] = [
 		title: 'BCH decoder weight leak',
 		leak: 'Runtime ∝ error weight',
 		body: 'Wafo-Tapa et al. showed the non-constant-time BCH decoder’s runtime correlated with the error weight, giving a chosen-ciphertext timing oracle. The fix was a constant-time decoder.',
-		source: { label: 'IACR ePrint 2020/1450', url: 'https://eprint.iacr.org/2020/1450' },
+		source: { label: 'IACR ePrint 2019/909', url: 'https://eprint.iacr.org/2019/909' },
 	},
 	{
 		year: '2023',
 		title: 'Cache-timing on the decoder',
 		leak: 'Data-dependent memory',
-		body: 'Guo et al. (TCHES) demonstrated a cache-timing attack against HQC, recovering the key from data-dependent memory access in the decoding step — moving the threat from wall-clock timing to the cache.',
-		source: { label: 'Guo et al., TCHES (ePrint 2023/102)', url: 'https://eprint.iacr.org/2023/102' },
+		body: 'Huang et al. (TCHES) demonstrated a cache-timing attack against HQC, recovering the key from data-dependent memory access in the decoding step — moving the threat from wall-clock timing to the cache.',
+		source: { label: 'Huang et al., TCHES (ePrint 2023/102)', url: 'https://eprint.iacr.org/2023/102' },
 	},
 	{
 		year: '2024',
