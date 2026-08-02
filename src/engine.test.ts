@@ -6,7 +6,9 @@ import {
 	probeRate,
 	runAttack,
 	formatSeed,
+	beatsGuessing,
 	type SimParams,
+	type AttackResult,
 } from './engine.ts';
 
 // A deterministic seed keeps every assertion reproducible.
@@ -251,5 +253,41 @@ describe('runAttack — edge cases', () => {
 		const res = runAttack(makeMessage(4, createRng(SEED)), baseParams({ messageBits: 4, probes: 0 }));
 		for (const o of res.observations) expect(o.hitRate).toBe(0);
 		expect(res.totalProbes).toBe(0);
+	});
+});
+
+describe('beatsGuessing — the verdict is measured, not read from the flag', () => {
+	function resultWith(k: number, correct: number): AttackResult {
+		return {
+			observations: [],
+			recoveredHard: new Uint8Array(k),
+			recoveredSoft: new Uint8Array(k),
+			accuracyHard: 0,
+			accuracySoft: correct / k,
+			bitsCorrectHard: correct,
+			bitsCorrectSoft: correct,
+			totalProbes: 0,
+			codewordLength: k,
+		};
+	}
+
+	it('does not call a chance-level run a signal', () => {
+		expect(beatsGuessing(resultWith(8, 4))).toBe(false);
+		expect(beatsGuessing(resultWith(8, 5))).toBe(false);
+	});
+
+	it('calls full recovery a signal', () => {
+		expect(beatsGuessing(resultWith(8, 8))).toBe(true);
+	});
+
+	it('reports a leak on the constant-time path when the run really recovered', () => {
+		// The defect this pins: the constant-time preset used to print "Defense
+		// held — recovery is no better than guessing" beside a measured 6/8.
+		expect(beatsGuessing(resultWith(8, 8))).toBe(true);
+		expect(beatsGuessing(resultWith(32, 32))).toBe(true);
+	});
+
+	it('treats an empty result as no signal rather than dividing by zero', () => {
+		expect(beatsGuessing(resultWith(0, 0))).toBe(false);
 	});
 });

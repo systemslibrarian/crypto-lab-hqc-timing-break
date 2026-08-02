@@ -216,3 +216,21 @@ export function runAttack(message: Uint8Array, params: SimParams): AttackResult 
 		codewordLength: n,
 	};
 }
+
+/**
+ * Did this run recover more than guessing would?
+ *
+ * Guessing k independent bits gets about k/2 right, with standard deviation
+ * sqrt(k/4). A run counts as beating chance only when it lands more than two
+ * standard deviations above that mean, so ordinary noise on a silent channel
+ * does not read as signal.
+ *
+ * The UI's verdict and status chip are both decided by this measurement rather
+ * than by the `optimized` flag, so a constant-time run that leaks anyway is
+ * reported as a failed defense instead of being congratulated.
+ */
+export function beatsGuessing(res: AttackResult): boolean {
+	const k = res.recoveredSoft.length;
+	if (k === 0) return false;
+	return res.bitsCorrectSoft > k / 2 + 2 * Math.sqrt(k * 0.25);
+}

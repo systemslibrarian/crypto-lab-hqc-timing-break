@@ -1,5 +1,5 @@
 // ui.ts — HQC compiler-induced cache-timing attack lab.
-import { runAttack, makeMessage, createRng, randomSeed, formatSeed, llr } from './engine.ts';
+import { runAttack, makeMessage, createRng, randomSeed, formatSeed, llr, beatsGuessing } from './engine.ts';
 import type { SimParams, AttackResult, PositionObs } from './engine.ts';
 import { SOURCE_VIEW, COMPILED_VIEW, STEPS, TIMELINE, DEFENSES, PRESETS } from './data.ts';
 import type { Preset, CodeView } from './data.ts';
@@ -331,13 +331,29 @@ function renderLab(): HTMLElement {
 		const edge = softBeatsHard
 			? ` Reliability weighting recovered ${res.bitsCorrectSoft - res.bitsCorrectHard} more bit${res.bitsCorrectSoft - res.bitsCorrectHard === 1 ? '' : 's'} than a plain majority vote here.`
 			: '';
+		// The verdict is decided by the MEASURED recovery, not by the optimized
+		// checkbox. Guessing k independent bits gets about k/2 right, so that is
+		// the bar the defense has to hold recovery down to. If the defense is on
+		// and recovery still beats chance, this says so instead of congratulating
+		// it — the same discipline the sibling hqc-timing repo adopted.
+		const chanceBits = k / 2;
+		const beatsChance = beatsGuessing(res);
+		const measured = `${res.bitsCorrectSoft}/${k} bits (${softPct}%)`;
+
 		const verdict = !params.optimized
-			? 'Defense held — the channel is silent, recovery is no better than guessing.'
+			? beatsChance
+				? `<strong>Defense FAILED.</strong> The constant-time path is selected, yet recovery reached ${measured} — above the ~${chanceBits} bits guessing alone would get, outside the noise band. A working constant-time decoder cannot produce this.` +
+					edge
+				: `Defense held — recovery is ${measured}, consistent with the ~${chanceBits} bits guessing alone would get.`
 			: res.accuracySoft === 1
-				? 'Full plaintext recovered — a complete decryption oracle.' + edge
+				? `Full plaintext recovered (${measured}) — a complete decryption oracle.` + edge
 				: res.accuracySoft > 0.8
-					? 'Most of the message recovered; add probes or redundancy to finish.' + edge
-					: 'Weak signal — raise probes/redundancy or lower cache noise.' + edge;
+					? `Most of the message recovered (${measured}); add probes or redundancy to finish.` + edge
+					: beatsChance
+						? `Weak signal — ${measured}, still above the ~${chanceBits} bits from guessing; raise probes/redundancy or lower cache noise.` +
+							edge
+						: `No usable signal — ${measured}, no better than the ~${chanceBits} bits from guessing at this noise level.` +
+							edge;
 		return `
       <ul class="confusion-row" aria-label="Recovery comparison">
         <li class="confusion-cell confusion-cell--tp"><span class="confusion-val">${res.bitsCorrectSoft}/${k}</span><span class="confusion-label">Soft-ISD</span></li>
@@ -478,9 +494,19 @@ function renderLab(): HTMLElement {
 	}
 
 	function chipFor(res: AttackResult, params: SimParams): { cls: string; text: string } {
-		if (!params.optimized) return { cls: 'vs-chip vs-chip--stark', text: 'Defended' };
+		// Like the verdict line, this reports what the run measured. "Defended"
+		// has to be earned by recovery staying at the guessing baseline, not
+		// assumed from the constant-time checkbox.
+		const beatsChance = beatsGuessing(res);
+		if (!params.optimized) {
+			return beatsChance
+				? { cls: 'vs-chip vs-chip--tie', text: 'Defense failed' }
+				: { cls: 'vs-chip vs-chip--stark', text: 'Defended' };
+		}
 		if (res.accuracySoft === 1) return { cls: 'vs-chip vs-chip--snark', text: 'Full recovery' };
-		return { cls: 'vs-chip vs-chip--tie', text: 'Partial' };
+		return beatsChance
+			? { cls: 'vs-chip vs-chip--tie', text: 'Partial' }
+			: { cls: 'vs-chip vs-chip--stark', text: 'No signal' };
 	}
 
 	// [HIGH] Attach hover/focus behavior to each bar so it lights up the matching
