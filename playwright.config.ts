@@ -16,12 +16,12 @@ export default defineConfig({
     // Build first: `vite preview` only serves the existing dist/, so without
     // this a broken build leaves the last good bundle in place and the suite
     // passes green against source that no longer compiles.
-    command: 'npm run build && npm run preview -- --port 4222 --strictPort',
-    url: 'http://localhost:4222/crypto-lab-hqc-timing-break/',
+    command: 'npm run build && npm run preview -- --port 4651 --strictPort',
+    url: 'http://localhost:4651/crypto-lab-hqc-timing-break/',
     reuseExistingServer: !process.env.CI,
   },
   use: {
-    baseURL: 'http://localhost:4222/crypto-lab-hqc-timing-break/',
+    baseURL: 'http://localhost:4651/crypto-lab-hqc-timing-break/',
     colorScheme: 'dark',
   },
 });
