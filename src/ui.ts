@@ -1,5 +1,5 @@
 // ui.ts — HQC compiler-induced cache-timing attack lab.
-import { runAttack, makeMessage, createRng, randomSeed, formatSeed, llr, beatsGuessing } from './engine.ts';
+import { runAttack, makeMessage, createRng, randomSeed, formatSeed, llr, beatsGuessing, channelDiscriminates } from './engine.ts';
 import type { SimParams, AttackResult, PositionObs } from './engine.ts';
 import { SOURCE_VIEW, COMPILED_VIEW, STEPS, TIMELINE, DEFENSES, PRESETS } from './data.ts';
 import type { Preset, CodeView } from './data.ts';
@@ -340,11 +340,18 @@ function renderLab(): HTMLElement {
 		const beatsChance = beatsGuessing(res);
 		const measured = `${res.bitsCorrectSoft}/${k} bits (${softPct}%)`;
 
+		// A run whose probes all read the same is carrying no information, so the
+		// tally beside it is the score of a constant all-ones guess against this
+		// message — not recovery. Saying so is the difference between "83%" reading
+		// as a leak and reading as what it is: the secret's Hamming weight.
+		const silentChannel = !channelDiscriminates(res);
 		const verdict = !params.optimized
 			? beatsChance
 				? `<strong>Defense FAILED.</strong> The constant-time path is selected, yet recovery reached ${measured} — above the ~${chanceBits} bits guessing alone would get, outside the noise band. A working constant-time decoder cannot produce this.` +
 					edge
-				: `Defense held — recovery is ${measured}, consistent with the ~${chanceBits} bits guessing alone would get.`
+				: silentChannel
+					? `Defense held — every probe hit regardless of the secret bit, so the channel carried no information. The ${measured} shown is only what a constant all-ones guess scores against this message, not recovered signal.`
+					: `Defense held — recovery is ${measured}, consistent with the ~${chanceBits} bits guessing alone would get.`
 			: res.accuracySoft === 1
 				? `Full plaintext recovered (${measured}) — a complete decryption oracle.` + edge
 				: res.accuracySoft > 0.8

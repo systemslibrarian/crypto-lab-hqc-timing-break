@@ -7,6 +7,7 @@ import {
 	runAttack,
 	formatSeed,
 	beatsGuessing,
+	channelDiscriminates,
 	type SimParams,
 	type AttackResult,
 } from './engine.ts';
@@ -289,5 +290,47 @@ describe('beatsGuessing — the verdict is measured, not read from the flag', ()
 
 	it('treats an empty result as no signal rather than dividing by zero', () => {
 		expect(beatsGuessing(resultWith(0, 0))).toBe(false);
+	});
+});
+
+describe('a silent channel is never a leak, however high the tally', () => {
+	// REGRESSION. The constant-time binary pins every hit-rate to 1, so both
+	// decoders emit all-ones and the tally equals the message's Hamming WEIGHT,
+	// not recovered information. A mostly-ones secret therefore used to trip the
+	// "beats guessing" bar and the UI printed "Defense FAILED ... a working
+	// constant-time decoder cannot produce this" over a run where every single
+	// probe was identical. Reproduced live in the browser: 10/12 bits, one
+	// distinct bar height.
+
+	it('channelDiscriminates is false when every position reports the same hit-rate', () => {
+		const message = makeMessage(12, createRng(SEED));
+		const res = runAttack(message, baseParams({ messageBits: 12, optimized: false }));
+		expect(new Set(res.observations.map((o) => o.hitRate)).size).toBe(1);
+		expect(channelDiscriminates(res)).toBe(false);
+	});
+
+	it('channelDiscriminates is true on a leaking run', () => {
+		const message = Uint8Array.from([1, 0, 1, 0, 1, 0]);
+		const res = runAttack(message, baseParams({ messageBits: 6, cacheNoise: 0, noiseSpread: 0 }));
+		expect(channelDiscriminates(res)).toBe(true);
+	});
+
+	it('a constant-time run with a mostly-ones secret does NOT read as beating guessing', () => {
+		// 10 of 12 bits set: all-ones scores 10/12, which clears k/2 + 2*sqrt(k/4).
+		const message = Uint8Array.from([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0]);
+		const res = runAttack(message, baseParams({ messageBits: 12, optimized: false }));
+		expect(res.bitsCorrectSoft).toBe(10);
+		expect(res.bitsCorrectSoft).toBeGreaterThan(12 / 2 + 2 * Math.sqrt(12 * 0.25));
+		expect(beatsGuessing(res)).toBe(false);
+	});
+
+	it('still reports a leak when a constant-time run really does discriminate', () => {
+		// The guard must not swallow the case the measured verdict exists for: if
+		// the "constant-time" path ever varied with the secret, that is a failure.
+		const message = makeMessage(12, createRng(SEED));
+		const res = runAttack(message, baseParams({ messageBits: 12, cacheNoise: 0, noiseSpread: 0 }));
+		expect(channelDiscriminates(res)).toBe(true);
+		expect(res.bitsCorrectSoft).toBe(12);
+		expect(beatsGuessing(res)).toBe(true);
 	});
 });

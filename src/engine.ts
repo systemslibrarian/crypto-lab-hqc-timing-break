@@ -218,12 +218,34 @@ export function runAttack(message: Uint8Array, params: SimParams): AttackResult 
 }
 
 /**
+ * Did the measured channel distinguish anything at all?
+ *
+ * If every codeword position reports the SAME hit-rate, the probes are
+ * independent of the secret and the decoder is guessing a constant vector —
+ * which is exactly what the constant-time binary produces (every probe hits, so
+ * every hit-rate is 1 and both decoders emit all-ones). Recovery counts from
+ * such a run measure the *message's* Hamming weight, not recovered information.
+ */
+export function channelDiscriminates(res: AttackResult): boolean {
+	const obs = res.observations;
+	if (obs.length === 0) return false;
+	const first = obs[0]!.hitRate;
+	return obs.some((o) => o.hitRate !== first);
+}
+
+/**
  * Did this run recover more than guessing would?
  *
  * Guessing k independent bits gets about k/2 right, with standard deviation
  * sqrt(k/4). A run counts as beating chance only when it lands more than two
  * standard deviations above that mean, so ordinary noise on a silent channel
  * does not read as signal.
+ *
+ * A run whose channel did not discriminate at all (see channelDiscriminates)
+ * never counts, however high the raw tally: a constant all-ones output scores
+ * the message's Hamming weight, and a mostly-ones secret would otherwise be
+ * mis-reported as a leak on a binary that leaked nothing. Results built without
+ * observations (unit fixtures) skip that check and are judged on counts alone.
  *
  * The UI's verdict and status chip are both decided by this measurement rather
  * than by the `optimized` flag, so a constant-time run that leaks anyway is
@@ -232,5 +254,6 @@ export function runAttack(message: Uint8Array, params: SimParams): AttackResult 
 export function beatsGuessing(res: AttackResult): boolean {
 	const k = res.recoveredSoft.length;
 	if (k === 0) return false;
+	if (res.observations.length > 0 && !channelDiscriminates(res)) return false;
 	return res.bitsCorrectSoft > k / 2 + 2 * Math.sqrt(k * 0.25);
 }
