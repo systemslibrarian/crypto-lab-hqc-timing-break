@@ -14,9 +14,13 @@
   white-space: nowrap;
 }
 
+/* The ink is --warning-fg, not --accent-2: --warning-bg is a 16% wash of
+   --accent-2 itself, so painting the label in --accent-2 converges foreground
+   and background (4.23:1 in dark). --warning-fg is the ink this surface already
+   has a token for. */
 .vs-chip--snark {
   background-color: var(--warning-bg);
-  color: var(--accent-2);
+  color: var(--warning-fg);
   border-color: var(--warning-border);
 }
 
@@ -35,7 +39,7 @@
 
 .control-bar {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   margin-top: 22px;
   padding: 18px;
@@ -249,13 +253,20 @@
 
 .lab-results {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   margin-top: 20px;
 }
 
+/* An explicit minmax(0, 1fr) track, not just `display: grid`: a grid's default
+   `auto` track takes its minimum from the widest child's min-content, so the
+   84-bar chart and the `white-space: pre` code inside .panel-card--wide sized
+   this column to 547px in a 380px viewport. `min-width: 0` below constrains what
+   THIS element contributes to its own parent and does nothing about the track
+   sizing its children. */
 .result-column {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   min-width: 0;
 }
@@ -349,7 +360,7 @@
 
 .how-steps {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   margin: 22px 0 0;
   padding: 0;
@@ -359,7 +370,7 @@
 
 .how-step {
   display: grid;
-  grid-template-columns: 40px 1fr;
+  grid-template-columns: 40px minmax(0, 1fr);
   gap: 14px;
   align-items: start;
   padding: 16px;
@@ -405,7 +416,7 @@
 
 @media (min-width: 720px) {
   .how-steps {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -482,12 +493,22 @@
 
 .timing-chart { margin-top: 12px; }
 
+/* At the sliders' maxima the chart is 84 bars, and 84 x 3px plus 83 x 3px of gap
+   is 501px — wider than a phone viewport, so the row used to push the whole
+   document sideways. Scroll the row instead. The scroller needs no tabindex: its
+   children are <button> bars, so it already has a keyboard route. .chart-area
+   keeps min-width: max-content so the absolutely positioned threshold line spans
+   the full scrolled width rather than just the visible slice. */
+.chart-scroll {
+  overflow-x: auto;
+}
 .chart-area {
   position: relative;
   display: flex;
   align-items: flex-end;
   gap: 3px;
   height: 180px;
+  min-width: max-content;
   padding: 24px 0 4px;
   border-bottom: 2px solid var(--line-strong);
 }
@@ -564,7 +585,7 @@
 
 .support-row {
   display: grid;
-  grid-template-columns: 80px 1fr;
+  grid-template-columns: 80px minmax(0, 1fr);
   gap: 10px;
   align-items: start;
 }
@@ -597,7 +618,7 @@
 
 .confusion-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin: 14px 0 0;
   padding: 0;
@@ -738,7 +759,7 @@
 
 .attack-step {
   display: grid;
-  grid-template-columns: 60px 1fr;
+  grid-template-columns: 60px minmax(0, 1fr);
   gap: 14px;
   align-items: start;
   padding: 18px;
@@ -1047,7 +1068,12 @@
   font-size: 0.82rem;
   line-height: 1.6;
   overflow-x: auto;
-  white-space: pre;
+  /* pre-wrap, not pre: this panel is aria-hidden (the narration below it is the
+     accessible equivalent), so it cannot take a tabindex without becoming an
+     aria-hidden-focus violation — which left a sighted keyboard user with 391px
+     of code in a 234px box and no way to scroll it. Wrapping removes the
+     scroller entirely; at desktop width nothing wraps, so it renders as before. */
+  white-space: pre-wrap;
 }
 
 .bb-line {
@@ -1132,8 +1158,10 @@
   background-color: color-mix(in oklab, var(--accent-4) 16%, transparent);
   border-color: color-mix(in oklab, var(--accent-4) 45%, var(--line));
 }
+/* Same convergence as .vs-chip--snark: the tint is 16% of --accent-2, so
+   --accent-2 as ink measured 4.36:1 in dark. --warning-fg is the paired ink. */
 .fs-tag--miss {
-  color: var(--accent-2);
+  color: var(--warning-fg);
   background-color: color-mix(in oklab, var(--accent-2) 16%, transparent);
   border-color: color-mix(in oklab, var(--accent-2) 45%, var(--line));
 }
@@ -1146,7 +1174,7 @@
 
 .fs-lane {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
   padding: 10px 12px;
   border-radius: 12px;

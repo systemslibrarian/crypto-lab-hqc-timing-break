@@ -214,7 +214,7 @@ a:hover { text-decoration-thickness: 2px; }
 .hero-panel {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
   padding: 28px 22px;
   border: 1px solid var(--line);
@@ -325,12 +325,18 @@ a:hover { text-decoration-thickness: 2px; }
   box-shadow: var(--shadow-soft);
 }
 
+/* --metric-muted is near-white because it was authored for .hero-metric-card,
+   a dark card that appears ZERO times in this lab's markup. The class outlived
+   the card: it is now a plain small-caps label on ordinary --panel-strong
+   surfaces (the two headings inside the bit-by-bit disclosure), where in light
+   theme it rendered near-white on near-white at 1.05:1. Take the ink from the
+   surface it actually sits on. */
 .hero-metric-label {
   margin: 0;
   font-size: 0.78rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--metric-muted);
+  color: var(--ink-soft);
   font-weight: 700;
 }
 
@@ -344,7 +350,7 @@ a:hover { text-decoration-thickness: 2px; }
 
 .hero-stat-row {
   display: grid;
-  grid-template-columns: minmax(70px, auto) 1fr;
+  grid-template-columns: minmax(min(70px, 100%), auto) minmax(0, 1fr);
   gap: 10px;
   align-items: baseline;
 }
@@ -515,7 +521,7 @@ a:hover { text-decoration-thickness: 2px; }
   display: grid;
   gap: 16px;
   margin-top: 22px;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .panel-card {

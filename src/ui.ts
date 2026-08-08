@@ -297,9 +297,11 @@ function renderLab(): HTMLElement {
           <span class="enc-key enc-key--hit">green = correct</span>,
           <span class="enc-key enc-key--miss">red = wrong</span>.
         </p>
-        <div class="chart-area" aria-describedby="chart-encoding">
-          <div class="threshold-line" style="bottom:50%"><span>hit / miss</span></div>
-          ${bars}
+        <div class="chart-scroll">
+          <div class="chart-area" aria-describedby="chart-encoding">
+            <div class="threshold-line" style="bottom:50%"><span>hit / miss</span></div>
+            ${bars}
+          </div>
         </div>
         <p class="section-footnote">${footnote}</p>
         <div class="bar-bridge" data-optimized="${params.optimized ? '1' : '0'}">
