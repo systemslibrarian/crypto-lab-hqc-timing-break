@@ -21,6 +21,5 @@ export const NONTEXT_BASELINE: Record<
   "control-boundary|button#reroll.ghost-button": { ratio: 1.33, required: 3.0, unverified: false },
   "control-boundary|button#seed-copy.seed-button": { ratio: 1.27, required: 3.0, unverified: false },
   "control-boundary|button#seed-lock.seed-button": { ratio: 1.27, required: 3.0, unverified: false },
-  "control-boundary|button#seed-lock.seed-button.is-locked": { ratio: 2.78, required: 3.0, unverified: false },
   "control-boundary|button.preset-chip": { ratio: 1.2, required: 3.0, unverified: false }
 };
