@@ -68,9 +68,9 @@ export const TIMELINE: TimelineEntry[] = [
 	},
 	{
 		year: '2023',
-		title: 'Cache-timing on the decoder',
+		title: 'Cache-timing on vector sampling',
 		leak: 'Data-dependent memory',
-		body: 'Huang et al. (TCHES) demonstrated a cache-timing attack against HQC, recovering the key from data-dependent memory access in the decoding step — moving the threat from wall-clock timing to the cache.',
+		body: 'Huang et al. (TCHES 2023) built a plaintext-checking oracle from a cache-timing leak in how the reference implementation samples the two fixed-weight vectors r₁ and e — not in the decoder — and recovered the key with it in about 53,857 traces. Moves the threat from wall-clock timing to the cache.',
 		source: { label: 'Huang et al., TCHES (ePrint 2023/102)', url: 'https://eprint.iacr.org/2023/102' },
 	},
 	{

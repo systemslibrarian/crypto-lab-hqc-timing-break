@@ -700,6 +700,18 @@ test.describe('static claims the README makes', () => {
     const last = steps.nth(3);
     await expect(last.locator('h3')).toContainText('Compiler-induced cache leak');
     await expect(last.locator('a')).toHaveAttribute('href', 'https://eprint.iacr.org/2026/693');
+
+    // The 2023 entry must place its leak where the paper does. Huang, Sim,
+    // Chuengsatiansup, Guo & Johansson, "Cache-Timing Attack Against HQC",
+    // TCHES 2023(3) 136-163 (ePrint 2023/102) §3.1 "The Sampling Process of r1
+    // and e": the leak is in vect_set_random_fixed_weight, which gives a
+    // plaintext-checking oracle, and full key recovery takes 53,857 traces on
+    // average. It is NOT in the decoder — the distinction the 2026 entry needs.
+    const y2023 = steps.nth(1);
+    await expect(y2023.locator('h3')).toContainText('vector sampling');
+    await expect(y2023).toContainText('53,857');
+    await expect(y2023).toContainText('plaintext-checking oracle');
+    await expect(y2023).not.toContainText('decoding step');
   });
 
   test('the four Flush+Reload steps and the do/don’t guide are present', async ({ page }) => {
